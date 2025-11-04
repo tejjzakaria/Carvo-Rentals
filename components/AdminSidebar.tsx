@@ -12,7 +12,7 @@ export default function AdminSidebar({ activePage }: AdminSidebarProps) {
 
   const handleSignOut = () => {
     localStorage.removeItem('adminAuth')
-    router.push('/app/signin')
+    router.push('/app/signin') 
   }
 
   const navItems = [
