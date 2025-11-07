@@ -1,184 +1,114 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Layout from '@/components/Layout'
+import BookingDialog from '@/components/BookingDialog'
 
-export default function VehiclesPage() {
+interface Vehicle {
+  id: string
+  name: string
+  category: string
+  images: string[]
+  price: number
+  status: string
+  specs: {
+    seats: number
+    transmission: string
+    fuel: string
+    year: number
+  }
+  features: string[]
+}
+
+function VehiclesPageContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currency, setCurrency] = useState('$')
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<any>({})
   const itemsPerPage = 6
 
-  const allCars = [
-    {
-      id: 1,
-      name: 'Mercedes-Benz S-Class',
-      category: 'Luxury',
-      image: '/placeholder-car.jpg',
-      price: 450,
-      specs: {
-        seats: 5,
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        year: 2024
-      },
-      features: ['GPS Navigation', 'Bluetooth', 'Leather Seats', 'Sunroof']
-    },
-    {
-      id: 2,
-      name: 'BMW X5',
-      category: 'SUV',
-      image: '/placeholder-car.jpg',
-      price: 380,
-      specs: {
-        seats: 7,
-        transmission: 'Automatic',
-        fuel: 'Diesel',
-        year: 2024
-      },
-      features: ['Sunroof', 'Apple CarPlay', '4WD', 'Parking Sensors']
-    },
-    {
-      id: 3,
-      name: 'Toyota Camry',
-      category: 'Sedan',
-      image: '/placeholder-car.jpg',
-      price: 180,
-      specs: {
-        seats: 5,
-        transmission: 'Automatic',
-        fuel: 'Hybrid',
-        year: 2024
-      },
-      features: ['Backup Camera', 'Cruise Control', 'USB Ports', 'Bluetooth']
-    },
-    {
-      id: 4,
-      name: 'Range Rover Sport',
-      category: 'Luxury',
-      image: '/placeholder-car.jpg',
-      price: 520,
-      specs: {
-        seats: 7,
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        year: 2024
-      },
-      features: ['Premium Sound', 'Panoramic Roof', 'Massage Seats', 'Adaptive Cruise']
-    },
-    {
-      id: 5,
-      name: 'Tesla Model 3',
-      category: 'Electric',
-      image: '/placeholder-car.jpg',
-      price: 280,
-      specs: {
-        seats: 5,
-        transmission: 'Automatic',
-        fuel: 'Electric',
-        year: 2024
-      },
-      features: ['Autopilot', 'Premium Interior', 'Fast Charging', '15" Touchscreen']
-    },
-    {
-      id: 6,
-      name: 'Nissan Patrol',
-      category: 'SUV',
-      image: '/placeholder-car.jpg',
-      price: 320,
-      specs: {
-        seats: 8,
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        year: 2024
-      },
-      features: ['4x4', 'Off-Road Package', 'Third Row Seats', 'Roof Rails']
-    },
-    {
-      id: 7,
-      name: 'Audi A6',
-      category: 'Luxury',
-      image: '/placeholder-car.jpg',
-      price: 400,
-      specs: {
-        seats: 5,
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        year: 2024
-      },
-      features: ['Virtual Cockpit', 'Matrix LED', 'Bang & Olufsen', 'Adaptive Suspension']
-    },
-    {
-      id: 8,
-      name: 'Honda Accord',
-      category: 'Sedan',
-      image: '/placeholder-car.jpg',
-      price: 160,
-      specs: {
-        seats: 5,
-        transmission: 'Automatic',
-        fuel: 'Hybrid',
-        year: 2024
-      },
-      features: ['Honda Sensing', 'Wireless Charging', 'Apple CarPlay', 'LED Headlights']
-    },
-    {
-      id: 9,
-      name: 'Porsche 911',
-      category: 'Sport',
-      image: '/placeholder-car.jpg',
-      price: 850,
-      specs: {
-        seats: 4,
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        year: 2024
-      },
-      features: ['Sport Exhaust', 'Launch Control', 'Sport Chrono', 'Bose Sound']
-    },
-    {
-      id: 10,
-      name: 'Tesla Model Y',
-      category: 'Electric',
-      image: '/placeholder-car.jpg',
-      price: 350,
-      specs: {
-        seats: 7,
-        transmission: 'Automatic',
-        fuel: 'Electric',
-        year: 2024
-      },
-      features: ['Autopilot', 'Glass Roof', 'Premium Audio', 'Supercharging']
-    },
-    {
-      id: 11,
-      name: 'Hyundai Tucson',
-      category: 'SUV',
-      image: '/placeholder-car.jpg',
-      price: 220,
-      specs: {
-        seats: 5,
-        transmission: 'Automatic',
-        fuel: 'Hybrid',
-        year: 2024
-      },
-      features: ['SmartSense', 'Wireless CarPlay', 'Panoramic Sunroof', 'Heated Seats']
-    },
-    {
-      id: 12,
-      name: 'BMW M4',
-      category: 'Sport',
-      image: '/placeholder-car.jpg',
-      price: 750,
-      specs: {
-        seats: 4,
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        year: 2024
-      },
-      features: ['M Sport Exhaust', 'Carbon Roof', 'Competition Package', 'Track Mode']
+  useEffect(() => {
+    // Extract filters from URL
+    const filters: any = {}
+    const category = searchParams.get('category')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+    const location = searchParams.get('location')
+
+    if (category) filters.category = category
+    if (startDate) filters.startDate = startDate
+    if (endDate) filters.endDate = endDate
+    if (location) filters.location = location
+
+    setActiveFilters(filters)
+    fetchVehicles()
+    fetchSettings()
+  }, [searchParams])
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/settings')
+      const data = await response.json()
+      if (data.success && data.data && data.data.currency) {
+        setCurrency(data.data.currency)
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
     }
-  ]
+  }
+
+  const fetchVehicles = async () => {
+    try {
+      // Build query string from search params
+      const params = new URLSearchParams(searchParams.toString())
+
+      const response = await fetch(`/api/vehicles?${params.toString()}`)
+      const data = await response.json()
+      if (data.success && data.vehicles) {
+        // Map database fields to component structure
+        const mappedVehicles = data.vehicles.map((vehicle: any) => ({
+          id: vehicle.id,
+          name: vehicle.name,
+          category: vehicle.category,
+          images: vehicle.images || [],
+          price: vehicle.price,
+          status: vehicle.status,
+          specs: {
+            seats: vehicle.seats,
+            transmission: vehicle.transmission,
+            fuel: vehicle.fuelType,
+            year: vehicle.year
+          },
+          features: vehicle.features || []
+        }))
+        setVehicles(mappedVehicles)
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const removeFilter = (filterKey: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete(filterKey)
+    router.push(`/vehicles?${params.toString()}`)
+  }
+
+  const clearAllFilters = () => {
+    router.push('/vehicles')
+  }
+
+  const allCars = vehicles
 
   // Filter cars based on search term
   const filteredCars = allCars.filter(car => {
@@ -221,7 +151,7 @@ export default function VehiclesPage() {
           </div>
 
           {/* Search Bar */}
-          <div className='max-w-2xl mx-auto mb-12'>
+          <div className='max-w-2xl mx-auto mb-8'>
             <div className='relative'>
               <input
                 type='text'
@@ -236,15 +166,105 @@ export default function VehiclesPage() {
             </div>
           </div>
 
+          {/* Active Filters */}
+          {Object.keys(activeFilters).length > 0 && (
+            <div className='max-w-4xl mx-auto mb-12'>
+              <div className='bg-gray-50 rounded-2xl p-4 border border-gray-200'>
+                <div className='flex flex-wrap items-center gap-3'>
+                  <span className='text-sm font-semibold text-gray-700'>Active Filters:</span>
+
+                  {activeFilters.category && (
+                    <div className='inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-primary/30 text-primary'>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                      <span className='text-sm font-medium'>{activeFilters.category}</span>
+                      <button
+                        onClick={() => removeFilter('category')}
+                        className='ml-1 hover:bg-primary/10 rounded-full p-0.5 transition-colors'
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  {activeFilters.startDate && activeFilters.endDate && (
+                    <div className='inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-primary/30 text-primary'>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className='text-sm font-medium'>
+                        {new Date(activeFilters.startDate).toLocaleDateString()} - {new Date(activeFilters.endDate).toLocaleDateString()}
+                      </span>
+                      <button
+                        onClick={() => {
+                          removeFilter('startDate')
+                          removeFilter('endDate')
+                        }}
+                        className='ml-1 hover:bg-primary/10 rounded-full p-0.5 transition-colors'
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  {activeFilters.location && (
+                    <div className='inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-primary/30 text-primary'>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className='text-sm font-medium'>{activeFilters.location}</span>
+                      <button
+                        onClick={() => removeFilter('location')}
+                        className='ml-1 hover:bg-primary/10 rounded-full p-0.5 transition-colors'
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={clearAllFilters}
+                    className='ml-auto px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-full transition-colors'
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Results Count */}
-          <div className='mb-6'>
-            <p className='text-gray-400'>
-              Showing <span className='font-bold text-primary'>{startIndex + 1}-{Math.min(endIndex, filteredCars.length)}</span> of <span className='font-bold text-primary'>{filteredCars.length}</span> vehicles
-            </p>
-          </div>
+          {!loading && (
+            <div className='mb-6'>
+              <p className='text-gray-400'>
+                Showing <span className='font-bold text-primary'>{startIndex + 1}-{Math.min(endIndex, filteredCars.length)}</span> of <span className='font-bold text-primary'>{filteredCars.length}</span> vehicles
+              </p>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <div className='text-center py-16'>
+              <svg className="animate-spin h-16 w-16 mx-auto text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <h3 className='text-2xl font-bold text-gray-700 mb-2'>Loading vehicles...</h3>
+              <p className='text-gray-500'>Please wait while we fetch our fleet</p>
+            </div>
+          )}
 
           {/* Cars Grid */}
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+          {!loading && (
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
             {currentCars.map((car) => (
               <div
                 key={car.id}
@@ -257,11 +277,28 @@ export default function VehiclesPage() {
                     {car.category}
                   </div>
 
-                  {/* Car Image Placeholder */}
-                  <div className='absolute inset-0 flex items-center justify-center'>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-48 w-48 text-primary opacity-20 group-hover:opacity-30 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
+                  {/* Rented Badge */}
+                  {car.status === 'rented' && (
+                    <div className='absolute top-6 left-6 z-10 bg-red-500 text-white px-5 py-2 rounded-full text-sm font-bold shadow-xl'>
+                      RENTED
+                    </div>
+                  )}
+
+                  {/* Car Image */}
+                  <div className='absolute inset-0'>
+                    {car.images && car.images.length > 0 ? (
+                      <img
+                        src={car.images[0]}
+                        alt={car.name}
+                        className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
+                      />
+                    ) : (
+                      <div className='flex items-center justify-center h-full'>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-48 w-48 text-primary opacity-20 group-hover:opacity-30 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
 
                   {/* Gradient Overlay */}
@@ -326,20 +363,27 @@ export default function VehiclesPage() {
                     <div>
                       <p className='text-sm text-gray-500 font-bold uppercase tracking-wider mb-2'>Price Per Day</p>
                       <div className='flex items-baseline gap-2'>
-                        <span className='text-5xl font-bold text-primary'>${car.price}</span>
+                        <span className='text-5xl font-bold text-primary'>{currency}{car.price}</span>
                       </div>
                     </div>
-                    <button className='px-8 py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-primary/50'>
-                      Book Now
+                    <button
+                      onClick={() => {
+                        setSelectedVehicle(car)
+                        setIsBookingDialogOpen(true)
+                      }}
+                      className='px-8 py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-primary/50'
+                    >
+                      {car.status === 'rented' ? 'Book Future Dates' : 'Book Now'}
                     </button>
                   </div>
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
 
           {/* Pagination */}
-          {filteredCars.length > itemsPerPage && (
+          {!loading && filteredCars.length > itemsPerPage && (
             <div className='mt-12 flex justify-center items-center gap-2'>
               {/* Previous Button */}
               <button
@@ -383,7 +427,7 @@ export default function VehiclesPage() {
           )}
 
           {/* No Results */}
-          {filteredCars.length === 0 && (
+          {!loading && filteredCars.length === 0 && (
             <div className='text-center py-16'>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -402,6 +446,39 @@ export default function VehiclesPage() {
       </Layout>
 
       <Footer />
+
+      {/* Booking Dialog */}
+      <BookingDialog
+        isOpen={isBookingDialogOpen}
+        onClose={() => {
+          setIsBookingDialogOpen(false)
+          setSelectedVehicle(null)
+        }}
+        vehicle={selectedVehicle}
+        currency={currency}
+      />
     </div>
+  )
+}
+
+export default function VehiclesPage() {
+  return (
+    <Suspense fallback={
+      <div>
+        <Header />
+        <Layout>
+          <div className='py-16 text-center'>
+            <svg className="animate-spin h-16 w-16 mx-auto text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <h3 className='text-2xl font-bold text-gray-700 mb-2'>Loading vehicles...</h3>
+          </div>
+        </Layout>
+        <Footer />
+      </div>
+    }>
+      <VehiclesPageContent />
+    </Suspense>
   )
 }

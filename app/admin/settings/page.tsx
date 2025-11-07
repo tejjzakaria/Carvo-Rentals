@@ -1,13 +1,15 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import AdminSidebar from '@/components/AdminSidebar'
 import AdminHeader from '@/components/AdminHeader'
 
 export default function SettingsPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('profile')
   const [isSaving, setIsSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
 
   useEffect(() => {
     // Check if user is authenticated
@@ -18,9 +20,9 @@ export default function SettingsPage() {
   }, [router])
 
   const [profileData, setProfileData] = useState({
-    fullName: 'Admin User',
-    email: 'admin@carvo.com',
-    phone: '+212 6 12 34 56 78',
+    fullName: '',
+    email: '',
+    phone: '',
     role: 'Administrator',
     avatar: ''
   })
@@ -39,7 +41,14 @@ export default function SettingsPage() {
     phone: '+212 5 22 12 34 56',
     email: 'contact@carvo.com',
     website: 'www.carvo.com',
-    taxId: 'MA123456789'
+    taxId: 'MA123456789',
+    logoPanelUrl: '',
+    logoHeaderUrl: '',
+    logoFooterUrl: '',
+    facebookUrl: '',
+    instagramUrl: '',
+    twitterUrl: '',
+    linkedinUrl: ''
   })
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -59,52 +68,325 @@ export default function SettingsPage() {
     timezone: 'Africa/Casablanca',
     currency: 'MAD',
     dateFormat: 'DD/MM/YYYY',
-    timeFormat: '24h'
+    timeFormat: '24h',
+    googleSheetId: ''
   })
 
-  const handleSaveProfile = () => {
-    setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
-      alert('Profile updated successfully!')
-    }, 1000)
-  }
+  // Fetch data based on active tab
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        if (activeTab === 'profile') {
+          const response = await fetch('/api/admin/profile')
+          const result = await response.json()
+          if (result.success) {
+            setProfileData({
+              fullName: result.data.name,
+              email: result.data.email,
+              phone: result.data.phone || '',
+              role: result.data.role,
+              avatar: result.data.avatar || ''
+            })
+          }
+        } else if (activeTab === 'business' || activeTab === 'system') {
+          const response = await fetch('/api/settings')
+          const result = await response.json()
+          if (result.success) {
+            setBusinessData({
+              companyName: result.data.companyName,
+              address: result.data.address,
+              city: result.data.city,
+              country: result.data.country,
+              phone: result.data.phone,
+              email: result.data.email,
+              website: result.data.website || '',
+              taxId: result.data.taxId || '',
+              logoPanelUrl: result.data.logoPanelUrl || '',
+              logoHeaderUrl: result.data.logoHeaderUrl || '',
+              logoFooterUrl: result.data.logoFooterUrl || '',
+              facebookUrl: result.data.facebookUrl || '',
+              instagramUrl: result.data.instagramUrl || '',
+              twitterUrl: result.data.twitterUrl || '',
+              linkedinUrl: result.data.linkedinUrl || ''
+            })
+            setSystemSettings({
+              language: result.data.language,
+              timezone: result.data.timezone,
+              currency: result.data.currency,
+              dateFormat: result.data.dateFormat,
+              timeFormat: result.data.timeFormat,
+              googleSheetId: result.data.googleSheetId || ''
+            })
+          }
+        } else if (activeTab === 'notifications') {
+          const response = await fetch('/api/settings/notifications')
+          const result = await response.json()
+          if (result.success) {
+            setNotificationSettings({
+              emailNewRental: result.data.emailNewRental,
+              emailRentalComplete: result.data.emailRentalComplete,
+              emailPaymentReceived: result.data.emailPaymentReceived,
+              emailLowInventory: result.data.emailLowInventory,
+              smsNewRental: result.data.smsNewRental,
+              smsRentalReminder: result.data.smsRentalReminder,
+              smsPaymentReceived: result.data.smsPaymentReceived,
+              pushNewRental: result.data.pushNewRental,
+              pushRentalReminder: result.data.pushRentalReminder
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const handleChangePassword = () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('Passwords do not match!')
+    fetchData()
+  }, [activeTab])
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => {
+        setToast({ ...toast, show: false })
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast.show])
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      setToast({ show: true, message: 'Please upload a valid image file (JPG, PNG, GIF, WebP)', type: 'error' })
       return
     }
-    setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
-      alert('Password changed successfully!')
-    }, 1000)
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setToast({ show: true, message: 'Image size must be less than 2MB', type: 'error' })
+      return
+    }
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setProfileData(prev => ({ ...prev, avatar: data.url }))
+        setToast({ show: true, message: 'Image uploaded successfully!', type: 'success' })
+      } else {
+        setToast({ show: true, message: data.error || 'Failed to upload image', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      setToast({ show: true, message: 'Failed to upload image', type: 'error' })
+    } finally {
+      setUploading(false)
+    }
   }
 
-  const handleSaveBusiness = () => {
-    setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
-      alert('Business settings updated successfully!')
-    }, 1000)
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, logoType: 'panel' | 'header' | 'footer') => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+    if (!validTypes.includes(file.type)) {
+      setToast({ show: true, message: 'Please upload a valid image file (JPG, PNG, WebP, SVG)', type: 'error' })
+      return
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setToast({ show: true, message: 'Logo size must be less than 2MB', type: 'error' })
+      return
+    }
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', logoType)
+
+      const response = await fetch('/api/upload/logo', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        const logoField = `logo${logoType.charAt(0).toUpperCase() + logoType.slice(1)}Url` as 'logoPanelUrl' | 'logoHeaderUrl' | 'logoFooterUrl'
+        setBusinessData(prev => ({ ...prev, [logoField]: data.url }))
+        setToast({ show: true, message: `${logoType.charAt(0).toUpperCase() + logoType.slice(1)} logo uploaded successfully!`, type: 'success' })
+      } else {
+        setToast({ show: true, message: data.error || 'Failed to upload logo', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      setToast({ show: true, message: 'Failed to upload logo', type: 'error' })
+    } finally {
+      setUploading(false)
+    }
   }
 
-  const handleSaveNotifications = () => {
+  const handleSaveProfile = async () => {
     setIsSaving(true)
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/admin/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: profileData.fullName,
+          email: profileData.email,
+          phone: profileData.phone,
+          avatar: profileData.avatar
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        setToast({ show: true, message: 'Profile updated successfully!', type: 'success' })
+      } else {
+        setToast({ show: true, message: result.error || 'Failed to update profile', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      setToast({ show: true, message: 'Failed to update profile', type: 'error' })
+    } finally {
       setIsSaving(false)
-      alert('Notification preferences updated successfully!')
-    }, 1000)
+    }
   }
 
-  const handleSaveSystem = () => {
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setToast({ show: true, message: 'Passwords do not match!', type: 'error' })
+      return
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      setToast({ show: true, message: 'Password must be at least 8 characters long', type: 'error' })
+      return
+    }
+
     setIsSaving(true)
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/admin/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        setToast({ show: true, message: 'Password changed successfully!', type: 'success' })
+      } else {
+        setToast({ show: true, message: result.error || 'Failed to change password', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      setToast({ show: true, message: 'Failed to change password', type: 'error' })
+    } finally {
       setIsSaving(false)
-      alert('System settings updated successfully!')
-    }, 1000)
+    }
+  }
+
+  const handleSaveBusiness = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...businessData,
+          ...systemSettings
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        setToast({ show: true, message: 'Business settings updated successfully!', type: 'success' })
+      } else {
+        setToast({ show: true, message: result.error || 'Failed to update business settings', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error updating business settings:', error)
+      setToast({ show: true, message: 'Failed to update business settings', type: 'error' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSaveNotifications = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/settings/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationSettings)
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        setToast({ show: true, message: 'Notification preferences updated successfully!', type: 'success' })
+      } else {
+        setToast({ show: true, message: result.error || 'Failed to update notification preferences', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error updating notifications:', error)
+      setToast({ show: true, message: 'Failed to update notification preferences', type: 'error' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSaveSystem = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...businessData,
+          ...systemSettings
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        setToast({ show: true, message: 'System settings updated successfully!', type: 'success' })
+      } else {
+        setToast({ show: true, message: result.error || 'Failed to update system settings', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error updating system settings:', error)
+      setToast({ show: true, message: 'Failed to update system settings', type: 'error' })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const tabs = [
@@ -137,16 +419,13 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className='flex h-screen bg-[#FFFFFF]'>
-      <AdminSidebar activePage="Settings" />
+    <>
+      <AdminHeader
+        title="Settings"
+        subtitle="Manage your account and preferences"
+      />
 
-      <div className='flex-1 overflow-auto bg-[#F5F5F5]'>
-        <AdminHeader
-          title="Settings"
-          subtitle="Manage your account and preferences"
-        />
-
-        <main className='p-8'>
+      <main className='p-8'>
           {/* Tabs */}
           <div className='bg-white rounded-2xl shadow-sm border border-gray-200 p-2 mb-6'>
             <div className='flex flex-wrap gap-2'>
@@ -176,14 +455,44 @@ export default function SettingsPage() {
               <div className='mb-8 pb-8 border-b border-gray-200'>
                 <label className='block text-sm font-semibold text-[#000000] mb-4'>Profile Photo</label>
                 <div className='flex items-center gap-6'>
-                  <div className='w-24 h-24 bg-linear-to-br from-primary to-primary-dark rounded-full flex items-center justify-center text-white text-3xl font-bold'>
-                    A
-                  </div>
+                  {profileData.avatar ? (
+                    <div className='w-24 h-24 rounded-full overflow-hidden border-4 border-primary'>
+                      <img
+                        src={profileData.avatar}
+                        alt='Profile'
+                        className='w-full h-full object-cover'
+                      />
+                    </div>
+                  ) : (
+                    <div className='w-24 h-24 bg-linear-to-br from-primary to-primary-dark rounded-full flex items-center justify-center text-white text-3xl font-bold'>
+                      {profileData.fullName ? profileData.fullName.charAt(0).toUpperCase() : 'A'}
+                    </div>
+                  )}
                   <div>
-                    <button className='px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all font-semibold mb-2'>
-                      Upload Photo
-                    </button>
-                    <p className='text-xs text-gray-300'>JPG, PNG or GIF. Max size 2MB</p>
+                    <input
+                      type='file'
+                      id='avatar-upload'
+                      accept='image/jpeg,image/png,image/gif,image/webp'
+                      onChange={handleImageUpload}
+                      className='hidden'
+                    />
+                    <label
+                      htmlFor='avatar-upload'
+                      className={`inline-block px-6 py-2 bg-primary text-white rounded-xl transition-all font-semibold mb-2 cursor-pointer ${
+                        uploading ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {uploading ? 'Uploading...' : 'Upload Photo'}
+                    </label>
+                    <p className='text-xs text-gray-300'>JPG, PNG, GIF or WebP. Max size 2MB</p>
+                    {profileData.avatar && (
+                      <button
+                        onClick={() => setProfileData(prev => ({ ...prev, avatar: '' }))}
+                        className='text-xs text-red-600 font-semibold mt-1 block'
+                      >
+                        Remove Photo
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -383,7 +692,179 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className='flex justify-end'>
+              {/* Company Logos */}
+              <div className='border-t-2 border-gray-200 pt-6 mt-6'>
+                <h3 className='text-lg font-bold text-[#000000] mb-4'>Company Logos</h3>
+                <p className='text-sm text-gray-300 mb-6'>Upload logos for different parts of your application</p>
+
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                  {/* Panel Logo */}
+                  <div>
+                    <label className='block text-sm font-semibold text-[#000000] mb-2'>Admin Panel Logo</label>
+                    <p className='text-xs text-gray-300 mb-3'>Displayed in the admin panel sidebar</p>
+                    <div className='flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-primary transition-colors'>
+                      {businessData.logoPanelUrl ? (
+                        <div className='relative w-full'>
+                          <img
+                            src={businessData.logoPanelUrl}
+                            alt='Panel Logo'
+                            className='w-full h-24 object-contain mb-3'
+                          />
+                          <button
+                            onClick={() => setBusinessData({ ...businessData, logoPanelUrl: '' })}
+                            className='text-xs text-red-500 hover:text-red-600 transition-colors'
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <label className='cursor-pointer text-center w-full'>
+                          <svg className='mx-auto h-12 w-12 text-gray-300 mb-2' stroke='currentColor' fill='none' viewBox='0 0 48 48'>
+                            <path d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
+                          </svg>
+                          <span className='text-sm text-primary font-medium'>Upload logo</span>
+                          <input
+                            type='file'
+                            className='hidden'
+                            accept='image/jpeg,image/png,image/webp,image/svg+xml'
+                            onChange={(e) => handleLogoUpload(e, 'panel')}
+                            disabled={uploading}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Header Logo */}
+                  <div>
+                    <label className='block text-sm font-semibold text-[#000000] mb-2'>Website Header Logo</label>
+                    <p className='text-xs text-gray-300 mb-3'>Displayed in the website header</p>
+                    <div className='flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-primary transition-colors'>
+                      {businessData.logoHeaderUrl ? (
+                        <div className='relative w-full'>
+                          <img
+                            src={businessData.logoHeaderUrl}
+                            alt='Header Logo'
+                            className='w-full h-24 object-contain mb-3'
+                          />
+                          <button
+                            onClick={() => setBusinessData({ ...businessData, logoHeaderUrl: '' })}
+                            className='text-xs text-red-500 hover:text-red-600 transition-colors'
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <label className='cursor-pointer text-center w-full'>
+                          <svg className='mx-auto h-12 w-12 text-gray-300 mb-2' stroke='currentColor' fill='none' viewBox='0 0 48 48'>
+                            <path d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
+                          </svg>
+                          <span className='text-sm text-primary font-medium'>Upload logo</span>
+                          <input
+                            type='file'
+                            className='hidden'
+                            accept='image/jpeg,image/png,image/webp,image/svg+xml'
+                            onChange={(e) => handleLogoUpload(e, 'header')}
+                            disabled={uploading}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Footer Logo */}
+                  <div>
+                    <label className='block text-sm font-semibold text-[#000000] mb-2'>Website Footer Logo</label>
+                    <p className='text-xs text-gray-300 mb-3'>Displayed in the website footer</p>
+                    <div className='flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-primary transition-colors'>
+                      {businessData.logoFooterUrl ? (
+                        <div className='relative w-full'>
+                          <img
+                            src={businessData.logoFooterUrl}
+                            alt='Footer Logo'
+                            className='w-full h-24 object-contain mb-3'
+                          />
+                          <button
+                            onClick={() => setBusinessData({ ...businessData, logoFooterUrl: '' })}
+                            className='text-xs text-red-500 hover:text-red-600 transition-colors'
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <label className='cursor-pointer text-center w-full'>
+                          <svg className='mx-auto h-12 w-12 text-gray-300 mb-2' stroke='currentColor' fill='none' viewBox='0 0 48 48'>
+                            <path d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
+                          </svg>
+                          <span className='text-sm text-primary font-medium'>Upload logo</span>
+                          <input
+                            type='file'
+                            className='hidden'
+                            accept='image/jpeg,image/png,image/webp,image/svg+xml'
+                            onChange={(e) => handleLogoUpload(e, 'footer')}
+                            disabled={uploading}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <p className='text-xs text-gray-300 mt-4'>
+                  Supported formats: JPG, PNG, WebP, SVG • Maximum size: 2MB
+                </p>
+              </div>
+
+              {/* Social Media Links */}
+              <div className='border-t-2 border-gray-200 pt-6 mt-6'>
+                <h3 className='text-lg font-bold text-[#000000] mb-4'>Social Media Links</h3>
+                <p className='text-sm text-gray-300 mb-6'>Add your social media profile URLs to display in the website footer</p>
+
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div>
+                    <label className='block text-sm font-semibold text-[#000000] mb-2'>Facebook URL</label>
+                    <input
+                      type='url'
+                      value={businessData.facebookUrl}
+                      onChange={(e) => setBusinessData({ ...businessData, facebookUrl: e.target.value })}
+                      placeholder='https://facebook.com/yourpage'
+                      className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors text-[#000000]'
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm font-semibold text-[#000000] mb-2'>Instagram URL</label>
+                    <input
+                      type='url'
+                      value={businessData.instagramUrl}
+                      onChange={(e) => setBusinessData({ ...businessData, instagramUrl: e.target.value })}
+                      placeholder='https://instagram.com/yourprofile'
+                      className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors text-[#000000]'
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm font-semibold text-[#000000] mb-2'>Twitter URL</label>
+                    <input
+                      type='url'
+                      value={businessData.twitterUrl}
+                      onChange={(e) => setBusinessData({ ...businessData, twitterUrl: e.target.value })}
+                      placeholder='https://twitter.com/yourprofile'
+                      className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors text-[#000000]'
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm font-semibold text-[#000000] mb-2'>LinkedIn URL</label>
+                    <input
+                      type='url'
+                      value={businessData.linkedinUrl}
+                      onChange={(e) => setBusinessData({ ...businessData, linkedinUrl: e.target.value })}
+                      placeholder='https://linkedin.com/company/yourcompany'
+                      className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors text-[#000000]'
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className='flex justify-end mt-6'>
                 <button
                   onClick={handleSaveBusiness}
                   disabled={isSaving}
@@ -614,6 +1095,24 @@ export default function SettingsPage() {
                     <option value='12h'>12 Hour (AM/PM)</option>
                   </select>
                 </div>
+
+                {/* Google Sheet ID for Backup */}
+                <div className='border-t-2 border-gray-200 pt-6'>
+                  <label className='block text-sm font-semibold text-[#000000] mb-2'>
+                    Google Sheet ID (for Backup)
+                  </label>
+                  <input
+                    type='text'
+                    value={systemSettings.googleSheetId}
+                    onChange={(e) => setSystemSettings({ ...systemSettings, googleSheetId: e.target.value })}
+                    placeholder='e.g., 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
+                    className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors text-[#000000]'
+                  />
+                  <p className='text-xs text-gray-300 mt-2'>
+                    Enter your Google Sheet ID from the sheet URL. Required for data backup feature.
+                    See GOOGLE_SHEETS_SETUP.md for setup instructions.
+                  </p>
+                </div>
               </div>
 
               <div className='flex justify-end'>
@@ -627,8 +1126,31 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </div>
+      </main>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className='fixed bottom-8 right-8 z-50 animate-slide-up'>
+          <div className={`px-6 py-4 rounded-xl shadow-lg border-2 ${
+            toast.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className='flex items-center gap-3'>
+              {toast.type === 'success' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              <p className='font-semibold'>{toast.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

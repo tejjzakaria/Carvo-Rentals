@@ -1,54 +1,108 @@
 'use client'
+import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Layout from '@/components/Layout'
 
+interface AboutData {
+  heroTitle: string
+  heroSubtitle: string
+  heroImage?: string
+  storyTitle: string
+  storyContent: string[]
+  storyImage?: string
+  missionTitle: string
+  missionContent: string
+  visionTitle: string
+  visionContent: string
+  values: string[]
+  statsTitle: string
+  statsSubtitle?: string
+  ctaTitle: string
+  ctaSubtitle?: string
+  ctaButtonText: string
+}
+
 export default function AboutPage() {
-  const values = [
-    {
-      icon: (
+  const [aboutData, setAboutData] = useState<AboutData | null>(null)
+  const [stats, setStats] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAboutData()
+    fetchStats()
+  }, [])
+
+  const fetchAboutData = async () => {
+    try {
+      const response = await fetch('/api/about-content')
+      const data = await response.json()
+      if (data.success) {
+        setAboutData(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching about data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/stats?activeOnly=true')
+      const data = await response.json()
+      if (data.success) {
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
+
+  const getIconComponent = (iconName: string) => {
+    const icons: any = {
+      shield: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       ),
-      title: 'Trust & Reliability',
-      description: 'We prioritize your safety and peace of mind with thoroughly inspected vehicles and transparent service.'
-    },
-    {
-      icon: (
+      star: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
         </svg>
       ),
-      title: 'Excellence',
-      description: 'We strive for excellence in every aspect, from our premium fleet to our customer service.'
-    },
-    {
-      icon: (
+      users: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       ),
-      title: 'Customer First',
-      description: 'Your satisfaction is our success. We go the extra mile to ensure you have the best experience.'
-    },
-    {
-      icon: (
+      bolt: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
-      ),
-      title: 'Innovation',
-      description: 'We embrace technology and innovation to make car rental simple, fast, and convenient.'
+      )
     }
-  ]
+    return icons[iconName] || icons.star
+  }
 
-  const stats = [
-    { number: '500+', label: 'Premium Vehicles' },
-    { number: '25,000+', label: 'Happy Customers' },
-    { number: '15+', label: 'Years Experience' },
-    { number: '8', label: 'Cities in Morocco' }
-  ]
+  if (loading) {
+    return (
+      <div>
+        <Header />
+        <Layout>
+          <div className='py-20 text-center'>
+            <div className='inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary'></div>
+            <p className='text-gray-600 mt-4'>Loading...</p>
+          </div>
+        </Layout>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (!aboutData) return null
+
+  const values = aboutData.values.map(v => JSON.parse(v))
 
   return (
     <div>
@@ -62,9 +116,9 @@ export default function AboutPage() {
           <div className='absolute bottom-0 left-0 w-96 h-96 bg-accent/20 rounded-full blur-3xl'></div>
 
           <div className='relative z-10 max-w-4xl mx-auto px-6'>
-            <h1 className='text-5xl md:text-6xl font-bold mb-6'>About Carvo</h1>
+            <h1 className='text-5xl md:text-6xl font-bold mb-6'>{aboutData.heroTitle}</h1>
             <p className='text-xl md:text-2xl leading-relaxed'>
-              Morocco's premier car rental service, dedicated to providing exceptional vehicles and unforgettable journeys since 2009
+              {aboutData.heroSubtitle}
             </p>
           </div>
         </div>
@@ -74,22 +128,16 @@ export default function AboutPage() {
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 items-center'>
             {/* Left: Image placeholder */}
             <div className='relative h-96 rounded-3xl overflow-hidden shadow-2xl'>
-              <img src="/logos/logo-primary-bg.png" alt="Carvo Logo" className='w-full h-full object-cover' />
+              <img src={aboutData.storyImage || '/logos/logo-primary-bg.png'} alt="Carvo Story" className='w-full h-full object-cover' />
             </div>
 
             {/* Right: Content */}
             <div>
-              <h2 className='text-4xl md:text-5xl font-bold mb-6 text-primary'>Our Story</h2>
+              <h2 className='text-4xl md:text-5xl font-bold mb-6 text-primary'>{aboutData.storyTitle}</h2>
               <div className='space-y-4 text-gray-300 leading-relaxed text-lg'>
-                <p>
-                  Founded in 2009 in the heart of Casablanca, Carvo began with a simple mission: to revolutionize the car rental experience in Morocco. What started as a small fleet of 10 vehicles has grown into one of the country's most trusted car rental services.
-                </p>
-                <p>
-                  Over the years, we've expanded our operations to 8 major cities across Morocco, serving thousands of customers from locals to international travelers. Our commitment to quality, safety, and customer satisfaction has remained unwavering.
-                </p>
-                <p>
-                  Today, Carvo is proud to offer a diverse fleet of over 500 premium vehicles, from economical sedans to luxury SUVs, ensuring that every journey is comfortable, safe, and memorable.
-                </p>
+                {aboutData.storyContent.map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
               </div>
             </div>
           </div>
@@ -105,9 +153,9 @@ export default function AboutPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className='text-3xl font-bold mb-4 text-primary'>Our Mission</h3>
+              <h3 className='text-3xl font-bold mb-4 text-primary'>{aboutData.missionTitle}</h3>
               <p className='text-gray-300 leading-relaxed'>
-                To provide accessible, reliable, and premium car rental services that empower people to explore Morocco with confidence and comfort. We strive to make every rental experience seamless, from booking to return.
+                {aboutData.missionContent}
               </p>
             </div>
 
@@ -119,9 +167,9 @@ export default function AboutPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
               </div>
-              <h3 className='text-3xl font-bold mb-4 text-primary'>Our Vision</h3>
+              <h3 className='text-3xl font-bold mb-4 text-primary'>{aboutData.visionTitle}</h3>
               <p className='text-gray-300 leading-relaxed'>
-                To become the leading car rental service across North Africa, recognized for innovation, sustainability, and exceptional customer experiences. We envision a future where renting a car is as easy as a few taps on your phone.
+                {aboutData.visionContent}
               </p>
             </div>
           </div>
@@ -132,11 +180,13 @@ export default function AboutPage() {
         <div className='py-16'>
           <div className='text-center mb-12'>
             <h2 className='text-4xl md:text-5xl font-bold mb-4 text-primary'>
-              Carvo in Numbers
+              {aboutData.statsTitle}
             </h2>
-            <p className='text-lg text-gray-300 mb-8 max-w-2xl mx-auto'>
-              Discover the impact we’ve made in the car rental industry
-            </p>
+            {aboutData.statsSubtitle && (
+              <p className='text-lg text-gray-300 mb-8 max-w-2xl mx-auto'>
+                {aboutData.statsSubtitle}
+              </p>
+            )}
           </div>
           <div className='bg-linear-to-br from-primary via-primary-dark to-primary-light rounded-3xl p-12 shadow-2xl'>
 
@@ -173,7 +223,7 @@ export default function AboutPage() {
                 className='group bg-white hover:bg-primary border-2 border-primary rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1'
               >
                 <div className='inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-primary to-primary-light group-hover:from-white group-hover:to-white text-white group-hover:text-primary rounded-xl mb-4 group-hover:scale-110 transition-all shadow-lg'>
-                  {value.icon}
+                  {getIconComponent(value.icon)}
                 </div>
                 <h3 className='text-xl font-bold text-[#000000] group-hover:text-[#FFFFFF] mb-3 transition-colors'>
                   {value.title}
@@ -190,14 +240,16 @@ export default function AboutPage() {
         <div className='py-16'>
           <div className='bg-white border-2 border-primary rounded-3xl p-12 text-center shadow-lg'>
             <h2 className='text-3xl md:text-4xl font-bold mb-4 text-primary'>
-              Ready to Start Your Journey?
+              {aboutData.ctaTitle}
             </h2>
-            <p className='text-lg text-gray-300 mb-8 max-w-2xl mx-auto'>
-              Join thousands of satisfied customers and experience the Carvo difference today
-            </p>
+            {aboutData.ctaSubtitle && (
+              <p className='text-lg text-gray-300 mb-8 max-w-2xl mx-auto'>
+                {aboutData.ctaSubtitle}
+              </p>
+            )}
             <a href="/vehicles">
               <button className='px-10 py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-primary/50'>
-                Browse Our Fleet
+                {aboutData.ctaButtonText}
               </button>
             </a>
           </div>

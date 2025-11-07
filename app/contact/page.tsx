@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Layout from '@/components/Layout'
@@ -13,6 +13,56 @@ export default function ContactPage() {
     message: ''
   })
 
+  const [loading, setLoading] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+  const [settings, setSettings] = useState({
+    phone: '+212 6 00 00 00 00',
+    email: 'info@carvo.com',
+    address: 'Boulevard Mohammed V',
+    city: 'Casablanca',
+    country: 'Morocco',
+    companyName: 'Carvo'
+  })
+
+  const [locations, setLocations] = useState<Array<{name: string}>>([])
+
+  useEffect(() => {
+    fetchSettings()
+    fetchLocations()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/settings')
+      const data = await response.json()
+      if (data.success && data.data) {
+        setSettings({
+          phone: data.data.phone || '+212 6 00 00 00 00',
+          email: data.data.email || 'info@carvo.com',
+          address: data.data.address || 'Boulevard Mohammed V',
+          city: data.data.city || 'Casablanca',
+          country: data.data.country || 'Morocco',
+          companyName: data.data.companyName || 'Carvo'
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
+    }
+  }
+
+  const fetchLocations = async () => {
+    try {
+      const response = await fetch('/api/locations?activeOnly=true')
+      const data = await response.json()
+      if (data.success && data.locations) {
+        setLocations(data.locations)
+      }
+    } catch (error) {
+      console.error('Error fetching locations:', error)
+    }
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -20,10 +70,41 @@ export default function ContactPage() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log('Form submitted:', formData)
+    setLoading(true)
+    setSubmitMessage(null)
+
+    try {
+      const response = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setSubmitMessage({ type: 'success', text: data.message })
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        })
+      } else {
+        setSubmitMessage({ type: 'error', text: data.error || 'Failed to send message. Please try again.' })
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      setSubmitMessage({ type: 'error', text: 'Something went wrong. Please try again later.' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const contactInfo = [
@@ -34,8 +115,8 @@ export default function ContactPage() {
         </svg>
       ),
       title: 'Phone',
-      details: ['+212 6 00 00 00 00', '+212 5 22 00 00 00'],
-      link: 'tel:+212600000000'
+      details: [settings.phone],
+      link: `tel:${settings.phone.replace(/\s/g, '')}`
     },
     {
       icon: (
@@ -44,8 +125,8 @@ export default function ContactPage() {
         </svg>
       ),
       title: 'Email',
-      details: ['info@carvo.com', 'support@carvo.com'],
-      link: 'mailto:info@carvo.com'
+      details: [settings.email],
+      link: `mailto:${settings.email}`
     },
     {
       icon: (
@@ -55,7 +136,7 @@ export default function ContactPage() {
         </svg>
       ),
       title: 'Head Office',
-      details: ['Boulevard Mohammed V', 'Casablanca, Morocco'],
+      details: [settings.address, `${settings.city}, ${settings.country}`],
       link: '#'
     },
     {
@@ -70,38 +151,6 @@ export default function ContactPage() {
     }
   ]
 
-  const offices = [
-    {
-      city: 'Casablanca',
-      address: 'Boulevard Mohammed V, Casablanca',
-      phone: '+212 5 22 00 00 00'
-    },
-    {
-      city: 'Marrakech',
-      address: 'Avenue Mohammed VI, Marrakech',
-      phone: '+212 5 24 00 00 00'
-    },
-    {
-      city: 'Rabat',
-      address: 'Avenue Allal Ben Abdellah, Rabat',
-      phone: '+212 5 37 00 00 00'
-    },
-    {
-      city: 'Tangier',
-      address: 'Boulevard Pasteur, Tangier',
-      phone: '+212 5 39 00 00 00'
-    },
-    {
-      city: 'Agadir',
-      address: 'Avenue Hassan II, Agadir',
-      phone: '+212 5 28 00 00 00'
-    },
-    {
-      city: 'Fes',
-      address: 'Avenue des FAR, Fes',
-      phone: '+212 5 35 00 00 00'
-    }
-  ]
 
   return (
     <div>
@@ -192,7 +241,7 @@ export default function ContactPage() {
                     value={formData.phone}
                     onChange={handleChange}
                     className='w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none transition-colors text-[#000000] placeholder:text-gray-400'
-                    placeholder='+212 6 00 00 00 00'
+                    placeholder={settings.phone}
                   />
                 </div>
 
@@ -233,12 +282,20 @@ export default function ContactPage() {
                   />
                 </div>
 
+                {/* Success/Error Message */}
+                {submitMessage && (
+                  <div className={`p-4 rounded-lg ${submitMessage.type === 'success' ? 'bg-green-50 border-2 border-green-200 text-green-800' : 'bg-red-50 border-2 border-red-200 text-red-800'}`}>
+                    <p className='text-sm font-semibold'>{submitMessage.text}</p>
+                  </div>
+                )}
+
                 {/* Submit Button */}
                 <button
                   type='submit'
-                  className='w-full px-8 py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl hover:shadow-primary/50'
+                  disabled={loading}
+                  className='w-full px-8 py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl hover:shadow-primary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none'
                 >
-                  Send Message
+                  {loading ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             </div>
@@ -262,8 +319,8 @@ export default function ContactPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <div>
-                      <p className='font-semibold text-gray-700'>Head Office</p>
-                      <p className='text-gray-300'>Boulevard Mohammed V, Casablanca, Morocco</p>
+                      <p className='font-semibold text-gray-300'>Head Office</p>
+                      <p className='text-gray-300'>{settings.address}, {settings.city}, {settings.country}</p>
                     </div>
                   </div>
                 </div>
@@ -304,49 +361,34 @@ export default function ContactPage() {
         </div>
 
         {/* Office Locations */}
-        <div className='py-16'>
-          <div className='text-center mb-12'>
-            <h2 className='text-4xl md:text-5xl font-bold mb-4 text-primary'>
-              Our Locations
-            </h2>
-            <p className='text-lg text-gray-300 max-w-2xl mx-auto'>
-              Visit any of our offices across Morocco for in-person assistance
-            </p>
-          </div>
+        {locations.length > 0 && (
+          <div className='py-16'>
+            <div className='text-center mb-12'>
+              <h2 className='text-4xl md:text-5xl font-bold mb-4 text-primary'>
+                Our Locations
+              </h2>
+              <p className='text-lg text-gray-300 max-w-2xl mx-auto'>
+                We serve customers across multiple locations
+              </p>
+            </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {offices.map((office, index) => (
-              <div
-                key={index}
-                className='bg-white border-2 border-primary rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300'
-              >
-                <div className='flex items-center gap-3 mb-4'>
-                  <div className='w-12 h-12 bg-linear-to-br from-primary to-primary-light rounded-xl flex items-center justify-center text-white font-bold text-lg'>
-                    {office.city.charAt(0)}
-                  </div>
-                  <h3 className='text-xl font-bold text-primary'>{office.city}</h3>
-                </div>
-                <div className='space-y-2 text-sm'>
-                  <div className='flex items-start gap-2'>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className='text-gray-300'>{office.address}</span>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <a href={`tel:${office.phone}`} className='text-gray-300 hover:text-primary transition-colors'>
-                      {office.phone}
-                    </a>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {locations.map((location, index) => (
+                <div
+                  key={index}
+                  className='bg-white border-2 border-primary rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300'
+                >
+                  <div className='flex items-center gap-3'>
+                    <div className='w-12 h-12 bg-linear-to-br from-primary to-primary-light rounded-xl flex items-center justify-center text-white font-bold text-lg'>
+                      {location.name.charAt(0)}
+                    </div>
+                    <h3 className='text-xl font-bold text-primary'>{location.name}</h3>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </Layout>
 
       <Footer />

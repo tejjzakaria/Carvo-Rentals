@@ -1,5 +1,15 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  read: boolean
+  createdAt: string
+}
 
 interface AdminHeaderProps {
   title: string
@@ -12,8 +22,96 @@ interface AdminHeaderProps {
 }
 
 export default function AdminHeader({ title, subtitle, actionButton }: AdminHeaderProps) {
+  const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [adminProfile, setAdminProfile] = useState<{ name: string; role: string; avatar: string | null } | null>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
+
+  // Fetch admin profile
+  useEffect(() => {
+    fetchAdminProfile()
+  }, [])
+
+  const fetchAdminProfile = async () => {
+    try {
+      const response = await fetch('/api/admin/profile')
+      const data = await response.json()
+      if (data.success) {
+        setAdminProfile({
+          name: data.data.name,
+          role: data.data.role,
+          avatar: data.data.avatar
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching admin profile:', error)
+    }
+  }
+
+  // Fetch notifications
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  // Refresh notifications when dropdown opens
+  useEffect(() => {
+    if (showNotifications) {
+      fetchNotifications()
+    }
+  }, [showNotifications])
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications?limit=10')
+      const data = await response.json()
+      if (data.success) {
+        setNotifications(data.notifications)
+        setUnreadCount(data.unreadCount)
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    }
+  }
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}`, {
+        method: 'PATCH'
+      })
+      if (response.ok) {
+        fetchNotifications()
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH'
+      })
+      if (response.ok) {
+        fetchNotifications()
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error)
+    }
+  }
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`
+    return date.toLocaleDateString()
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -31,51 +129,6 @@ export default function AdminHeader({ title, subtitle, actionButton }: AdminHead
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showNotifications])
-
-  const notifications = [
-    {
-      id: 1,
-      type: 'rental',
-      title: 'New Rental Booking',
-      message: 'Ahmed Hassan booked Mercedes-Benz S-Class',
-      time: '5 min ago',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'payment',
-      title: 'Payment Received',
-      message: 'Payment of $2,250 received from Sarah Johnson',
-      time: '1 hour ago',
-      read: false
-    },
-    {
-      id: 3,
-      type: 'rental',
-      title: 'Rental Completed',
-      message: 'Mohammed Alami completed rental for Toyota Camry',
-      time: '3 hours ago',
-      read: true
-    },
-    {
-      id: 4,
-      type: 'customer',
-      title: 'New Customer',
-      message: 'Emily Chen registered as a new customer',
-      time: '5 hours ago',
-      read: true
-    },
-    {
-      id: 5,
-      type: 'maintenance',
-      title: 'Maintenance Alert',
-      message: 'BMW X5 requires scheduled maintenance',
-      time: '1 day ago',
-      read: true
-    }
-  ]
-
-  const unreadCount = notifications.filter(n => !n.read).length
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -117,12 +170,25 @@ export default function AdminHeader({ title, subtitle, actionButton }: AdminHead
   }
 
   return (
-    <header className='bg-white border-b border-gray-200 px-8 py-4'>
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold text-[#000000]'>{title}</h1>
-          <p className='text-gray-500 text-sm'>{subtitle}</p>
+    <>
+      {/* Beta Disclaimer Banner */}
+      <div className='bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-200 px-8 py-2'>
+        <div className='flex items-center justify-center gap-2 text-sm'>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className='text-yellow-800 font-medium'>
+            <span className='font-bold'>BETA VERSION:</span> This platform is currently in beta and may encounter technical issues. Thank you for your patience.
+          </span>
         </div>
+      </div>
+
+      <header className='bg-white border-b border-gray-200 px-8 py-4'>
+        <div className='flex items-center justify-between'>
+          <div>
+            <h1 className='text-2xl font-bold text-[#000000]'>{title}</h1>
+            <p className='text-gray-500 text-sm'>{subtitle}</p>
+          </div>
         <div className='flex items-center gap-4'>
           {actionButton && (
             <button
@@ -155,53 +221,99 @@ export default function AdminHeader({ title, subtitle, actionButton }: AdminHead
                 <div className='px-6 py-4 border-b border-gray-200'>
                   <div className='flex items-center justify-between'>
                     <h3 className='text-lg font-bold text-[#000000]'>Notifications</h3>
-                    {unreadCount > 0 && (
-                      <span className='px-2 py-1 bg-red-100 text-red-600 text-xs font-semibold rounded-full'>
-                        {unreadCount} new
-                      </span>
-                    )}
+                    <div className='flex items-center gap-2'>
+                      {unreadCount > 0 && (
+                        <>
+                          <span className='px-2 py-1 bg-red-100 text-red-600 text-xs font-semibold rounded-full'>
+                            {unreadCount} new
+                          </span>
+                          <button
+                            onClick={handleMarkAllAsRead}
+                            className='text-xs text-primary font-semibold'
+                          >
+                            Mark all read
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Notifications List */}
                 <div className='max-h-[400px] overflow-y-auto'>
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`px-6 py-4 border-b border-gray-200 ${
-                        !notification.read ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      <div className='flex items-start gap-3'>
-                        {getNotificationIcon(notification.type)}
-                        <div className='flex-1'>
-                          <p className='text-sm font-semibold text-[#000000] mb-1'>{notification.title}</p>
-                          <p className='text-xs text-gray-300 mb-2'>{notification.message}</p>
-                          <p className='text-xs text-gray-500'>{notification.time}</p>
-                        </div>
-                        {!notification.read && (
-                          <div className='w-2 h-2 bg-blue-600 rounded-full mt-2'></div>
-                        )}
-                      </div>
+                  {notifications.length === 0 ? (
+                    <div className='px-6 py-8 text-center'>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      <p className='text-gray-500 text-sm'>No notifications yet</p>
                     </div>
-                  ))}
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        onClick={() => !notification.read && handleMarkAsRead(notification.id)}
+                        className={`px-6 py-4 border-b border-gray-200 cursor-pointer transition-colors ${
+                          !notification.read ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className='flex items-start gap-3'>
+                          {getNotificationIcon(notification.type)}
+                          <div className='flex-1'>
+                            <p className='text-sm font-semibold text-[#000000] mb-1'>{notification.title}</p>
+                            <p className='text-xs text-gray-300 mb-2'>{notification.message}</p>
+                            <p className='text-xs text-gray-500'>{formatTime(notification.createdAt)}</p>
+                          </div>
+                          {!notification.read && (
+                            <div className='w-2 h-2 bg-blue-600 rounded-full mt-2'></div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
+
+                {/* Footer */}
+                {notifications.length > 0 && (
+                  <div className='px-6 py-3 border-t border-gray-200 text-center'>
+                    <button
+                      onClick={() => {
+                        setShowNotifications(false)
+                        router.push('/admin/notifications')
+                      }}
+                      className='text-sm text-primary font-semibold'
+                    >
+                      View all notifications
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Profile */}
           <div className='flex items-center gap-3 pl-4 border-l border-gray-200'>
-            <div className='w-10 h-10 bg-linear-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold'>
-              A
-            </div>
+            {adminProfile?.avatar ? (
+              <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-primary'>
+                <img
+                  src={adminProfile.avatar}
+                  alt='Profile'
+                  className='w-full h-full object-cover'
+                />
+              </div>
+            ) : (
+              <div className='w-10 h-10 bg-linear-to-br from-primary to-primary-light rounded-full flex items-center justify-center text-white font-bold'>
+                {adminProfile?.name ? adminProfile.name.charAt(0).toUpperCase() : 'A'}
+              </div>
+            )}
             <div className='text-left'>
-              <p className='text-sm font-semibold text-[#000000]'>Admin User</p>
-              <p className='text-xs text-gray-500'>Administrator</p>
+              <p className='text-sm font-semibold text-[#000000]'>{adminProfile?.name || 'Admin User'}</p>
+              <p className='text-xs text-gray-500'>{adminProfile?.role || 'Administrator'}</p>
             </div>
           </div>
         </div>
       </div>
-    </header>
+      </header>
+    </>
   )
 }

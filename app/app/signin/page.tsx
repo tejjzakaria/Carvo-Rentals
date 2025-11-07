@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 
 export default function AdminSignInPage() {
   const router = useRouter()
@@ -22,21 +23,50 @@ export default function AdminSignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('=== FORM SUBMITTED ===')
+    console.log('Form data:', { email: formData.email, password: '***' })
+
     setError('')
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes - in production, validate against real backend
-      if (formData.email === 'admin@carvo.com' && formData.password === 'admin123') {
-        // Store auth token (in production, use proper authentication)
-        localStorage.setItem('adminAuth', 'true')
-        router.push('/admin/dashboard')
-      } else {
+    try {
+      console.log('Sending login request via NextAuth...')
+
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false
+      })
+
+      console.log('SignIn result:', result)
+
+      if (result?.error) {
+        console.error('Login error:', result.error)
         setError('Invalid email or password')
         setIsLoading(false)
+      } else if (result?.ok) {
+        console.log('Login successful!')
+        // Get the session to determine role
+        const sessionRes = await fetch('/api/auth/session')
+        const sessionData = await sessionRes.json()
+
+        console.log('Session data:', sessionData)
+
+        // Redirect based on user role
+        if (sessionData.user?.role === 'manager') {
+          console.log('Redirecting to manager dashboard')
+          router.push('/manager/dashboard')
+        } else {
+          console.log('Redirecting to admin dashboard')
+          router.push('/admin/dashboard')
+        }
+        router.refresh()
       }
-    }, 1000)
+    } catch (error) {
+      console.error('Login exception:', error)
+      setError('An error occurred. Please try again.')
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -147,8 +177,18 @@ export default function AdminSignInPage() {
           {/* Demo Credentials */}
           <div className='mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl'>
             <p className='text-xs text-gray-600 text-center mb-2 font-semibold'>Demo Credentials:</p>
-            <p className='text-xs text-gray-600 text-center'>Email: <span className='font-mono font-semibold'>admin@carvo.com</span></p>
-            <p className='text-xs text-gray-600 text-center'>Password: <span className='font-mono font-semibold'>admin123</span></p>
+            <div className='space-y-2'>
+              <div>
+                <p className='text-xs text-gray-600 text-center font-semibold'>Admin:</p>
+                <p className='text-xs text-gray-600 text-center'>Email: <span className='font-mono font-semibold'>admin@carvo.com</span></p>
+                <p className='text-xs text-gray-600 text-center'>Password: <span className='font-mono font-semibold'>password123</span></p>
+              </div>
+              <div className='border-t border-primary/10 pt-2'>
+                <p className='text-xs text-gray-600 text-center font-semibold'>Manager:</p>
+                <p className='text-xs text-gray-600 text-center'>Email: <span className='font-mono font-semibold'>manager@carvo.com</span></p>
+                <p className='text-xs text-gray-600 text-center'>Password: <span className='font-mono font-semibold'>password123</span></p>
+              </div>
+            </div>
           </div>
         </div>
 

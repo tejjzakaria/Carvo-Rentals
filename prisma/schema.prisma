@@ -1,0 +1,410 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Admin Users
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  phone     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Customers
+model Customer {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String   @unique
+  phone        String
+  location     String
+  status       String   @default("active") // active, inactive
+  avatar       String?
+  joinedDate   DateTime @default(now())
+  totalRentals Int      @default(0)
+  totalSpent   Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  rentals   Rental[]
+  documents CustomerDocument[]
+
+  @@map("customers")
+}
+
+// Customer Documents
+model CustomerDocument {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  customerId      String    @db.ObjectId
+  documentType    String // drivers_license, id_card, proof_of_address
+  documentUrl     String?
+  uploadToken     String    @unique // Secure token for upload link
+  tokenExpiresAt  DateTime // Token expiration date
+  status          String    @default("pending") // pending, uploaded, verified, rejected, expired
+  expiryDate      DateTime? // For driver's license expiry
+  rejectionReason String?
+  uploadedAt      DateTime?
+  verifiedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_documents")
+}
+
+// Vehicles
+model Vehicle {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  category     String // Luxury, SUV, Sedan, Electric, Sport
+  plateNumber  String   @unique
+  year         Int
+  seats        Int
+  transmission String // Automatic, Manual
+  fuelType     String // Petrol, Diesel, Electric, Hybrid
+  mileage      Int
+  price        Float
+  status       String   @default("available") // available, rented, maintenance, minor_damage, moderate_damage, severe_damage
+  featured     Boolean  @default(false) // Show on homepage featured section
+  features     String[] // Array of features
+  description  String?
+  images       String[] // Array of image URLs
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  rentals      Rental[]
+  damages      Damage[]
+  maintenances Maintenance[]
+
+  @@map("vehicles")
+}
+
+// Rentals
+model Rental {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  rentalId      String   @unique // RNT-001, RNT-002, etc.
+  customerId    String   @db.ObjectId
+  vehicleId     String   @db.ObjectId
+  startDate     DateTime
+  endDate       DateTime
+  status        String   @default("pending") // pending, active, completed, cancelled
+  withDriver    Boolean  @default(false)
+  insurance     Boolean  @default(false)
+  totalAmount   Float
+  paymentStatus String   @default("pending") // pending, paid, refunded
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id])
+  payments Payment[]
+  damages  Damage[]
+
+  @@map("rentals")
+}
+
+// Payments
+model Payment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  rentalId        String   @db.ObjectId
+  amount          Float
+  paymentMethod   String // card, cash, bank_transfer
+  paymentStatus   String   @default("pending") // pending, completed, failed, refunded
+  transactionId   String?
+  paymentDate     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  rental Rental @relation(fields: [rentalId], references: [id])
+
+  @@map("payments")
+}
+
+// Notifications
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  type      String // rental, payment, customer, maintenance
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+// System Settings
+model Settings {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  companyName   String
+  address       String
+  city          String
+  country       String
+  phone         String
+  email         String
+  website       String?
+  taxId         String?
+  language      String   @default("en")
+  timezone      String   @default("Africa/Casablanca")
+  currency      String   @default("MAD")
+  dateFormat    String   @default("DD/MM/YYYY")
+  timeFormat    String   @default("24h")
+  googleSheetId String? // Google Sheet ID for data backup
+  logoPanelUrl  String? // Logo for admin panel
+  logoHeaderUrl String? // Logo for website header
+  logoFooterUrl String? // Logo for website footer
+  facebookUrl   String? // Facebook page URL
+  instagramUrl  String? // Instagram profile URL
+  twitterUrl    String? // Twitter profile URL
+  linkedinUrl   String? // LinkedIn profile URL
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// Notification Settings
+model NotificationSettings {
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  emailNewRental         Boolean  @default(true)
+  emailRentalComplete    Boolean  @default(true)
+  emailPaymentReceived   Boolean  @default(true)
+  emailLowInventory      Boolean  @default(false)
+  smsNewRental           Boolean  @default(false)
+  smsRentalReminder      Boolean  @default(true)
+  smsPaymentReceived     Boolean  @default(false)
+  pushNewRental          Boolean  @default(true)
+  pushRentalReminder     Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("notification_settings")
+}
+
+// Damages
+model Damage {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  vehicleId   String    @db.ObjectId
+  rentalId    String?   @db.ObjectId // Optional - damage may not be linked to a rental
+  severity    String // minor, moderate, severe
+  description String
+  repairCost  Float     @default(0)
+  insuranceClaim Boolean @default(false)
+  claimAmount Float?
+  status      String    @default("reported") // reported, in_repair, repaired
+  images      String[] // Array of damage photo URLs
+  reportedDate DateTime @default(now())
+  repairedDate DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  rental  Rental? @relation(fields: [rentalId], references: [id])
+
+  @@map("damages")
+}
+
+// Maintenance
+model Maintenance {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  vehicleId        String    @db.ObjectId
+  maintenanceType  String // oil_change, tire_rotation, inspection, brake_service, general_service, etc.
+  description      String
+  cost             Float     @default(0)
+  serviceProvider  String?
+  status           String    @default("scheduled") // scheduled, in_progress, completed, cancelled
+  scheduledDate    DateTime
+  completedDate    DateTime?
+  mileageAtService Int?
+  nextServiceDue   DateTime? // For recurring maintenance
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@map("maintenances")
+}
+
+// Testimonials
+model Testimonial {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  location  String
+  rating    Int      @default(5) // 1-5 stars
+  comment   String
+  image     String? // Optional avatar/profile image
+  isActive  Boolean  @default(true) // Show/hide on website
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("testimonials")
+}
+
+// Stats/Facts
+model Stat {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  number    String // e.g., "500+", "25K+", "99.9%"
+  label     String // e.g., "Premium Vehicles", "Happy Customers"
+  icon      String // Icon name/identifier (e.g., "car", "users", "location", "star") or "custom"
+  iconUrl   String? // URL for custom uploaded icon
+  color     String   @default("from-primary to-primary-light") // Gradient color classes
+  order     Int      @default(0) // Display order
+  isActive  Boolean  @default(true) // Show/hide on website
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stats")
+}
+
+// Booking Steps
+model BookingStep {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  stepNumber  String // e.g., "01", "02", "03", "04"
+  icon        String // Icon name/identifier or "custom"
+  iconUrl     String? // URL for custom uploaded icon
+  title       String // e.g., "Search & Select"
+  description String // Step description
+  order       Int      @default(0) // Display order
+  isActive    Boolean  @default(true) // Show/hide on website
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("booking_steps")
+}
+
+// Features (Why Choose Carvo)
+model Feature {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  icon        String // Icon name/identifier or "custom"
+  iconUrl     String? // URL for custom uploaded icon
+  title       String // e.g., "24/7 Availability"
+  description String // Feature description
+  order       Int      @default(0) // Display order
+  isActive    Boolean  @default(true) // Show/hide on website
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("features")
+}
+
+// Locations (Rental/Return locations)
+model Location {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique // e.g., "Casablanca City Center", "Marrakech Airport"
+  order     Int      @default(0) // Display order
+  isActive  Boolean  @default(true) // Show/hide on website
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("locations")
+}
+
+// FAQ (Frequently Asked Questions)
+model FAQ {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  question  String // e.g., "What documents do I need to rent a car?"
+  answer    String // Detailed answer
+  category  String   @default("General") // General, Pricing, Insurance, etc.
+  order     Int      @default(0) // Display order
+  isActive  Boolean  @default(true) // Show/hide on website
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+// Content Pages (Terms, Privacy Policy, etc.)
+model Page {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String // e.g., "Terms and Conditions", "Privacy Policy"
+  slug      String   @unique // URL-friendly identifier (e.g., "terms-conditions")
+  content   String // Page content (can be HTML or markdown)
+  isActive  Boolean  @default(true) // Show/hide page
+  order     Int      @default(0) // Display order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pages")
+}
+
+// Newsletter Subscriptions
+model Newsletter {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  email       String   @unique
+  status      String   @default("active") // active, unsubscribed
+  source      String   @default("footer") // footer, homepage, etc.
+  subscribedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("newsletters")
+}
+
+// About Page Content
+model AboutContent {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Hero Section
+  heroTitle       String   @default("About Carvo")
+  heroSubtitle    String   @default("Morocco's premier car rental service")
+  heroImage       String?
+
+  // Story Section
+  storyTitle      String   @default("Our Story")
+  storyContent    String[] // Array of paragraphs
+  storyImage      String?
+
+  // Mission & Vision
+  missionTitle    String   @default("Our Mission")
+  missionContent  String
+  visionTitle     String   @default("Our Vision")
+  visionContent   String
+
+  // Values (stored as JSON strings)
+  values          String[] // JSON strings: [{icon, title, description}]
+
+  // Stats Section
+  statsTitle      String   @default("Carvo in Numbers")
+  statsSubtitle   String?
+
+  // CTA Section
+  ctaTitle        String   @default("Ready to Start Your Journey?")
+  ctaSubtitle     String?
+  ctaButtonText   String   @default("Browse Our Fleet")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("about_content")
+}
+
+// Contact Messages
+model Contact {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    String   @default("new") // new, read, replied, archived
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contacts")
+}

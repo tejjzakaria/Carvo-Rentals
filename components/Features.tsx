@@ -1,63 +1,38 @@
+'use client'
+import { useState, useEffect } from 'react'
 import Layout from './Layout'
+import { getIconPath } from '@/lib/icons'
+
+interface Feature {
+  id: string
+  icon: string
+  iconUrl?: string
+  title: string
+  description: string
+  order: number
+}
 
 const Features = () => {
-  const features = [
-    {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      title: '24/7 Availability',
-      description: 'Book your car anytime, anywhere with our round-the-clock service and support.'
-    },
-    {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
-      ),
-      title: 'Verified Vehicles',
-      description: 'All our vehicles are thoroughly inspected and maintained to ensure safety and reliability.'
-    },
-    {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      title: 'Best Prices',
-      description: 'Competitive rates with no hidden fees. Get the best value for your money.'
-    },
-    {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
-      title: 'Multiple Locations',
-      description: 'Pick up and drop off at convenient locations across Morocco.'
-    },
-    {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      ),
-      title: 'Professional Drivers',
-      description: 'Experienced and licensed drivers available for your convenience and comfort.'
-    },
-    {
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-      title: 'Instant Booking',
-      description: 'Quick and easy booking process. Get your car in just a few clicks.'
+  const [features, setFeatures] = useState<Feature[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchFeatures()
+  }, [])
+
+  const fetchFeatures = async () => {
+    try {
+      const res = await fetch('/api/features?activeOnly=true')
+      const data = await res.json()
+      if (data.success) {
+        setFeatures(data.features)
+      }
+    } catch (error) {
+      console.error('Error fetching features:', error)
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
   return (
     <Layout>
@@ -65,7 +40,7 @@ const Features = () => {
         {/* Section Header */}
         <div className='text-center mb-12'>
           <h2 className='text-4xl md:text-5xl font-bold mb-4 text-primary'>
-            Why Choose Carvo?
+            Why Choose us?
           </h2>
           <p className='text-lg text-gray-500 max-w-2xl mx-auto'>
             Experience the best car rental service with our premium features and exceptional customer support
@@ -73,35 +48,55 @@ const Features = () => {
         </div>
 
         {/* Features Grid */}
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className='group relative bg-white hover:bg-primary border border-gray-200 hover:border-primary-light rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 overflow-hidden'
-            >
-              {/* Content */}
-              <div className='relative z-10'>
-                {/* Icon */}
-                <div className='inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-primary to-primary-light group-hover:from-secondary group-hover:to-secondary-light text-white rounded-xl mb-4 group-hover:scale-110 transition-all shadow-lg'>
-                  {feature.icon}
+        {loading ? (
+          <div className='text-center py-12'>
+            <div className='inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-primary'></div>
+            <p className='mt-4 text-lg text-gray-500'>Loading features...</p>
+          </div>
+        ) : features.length === 0 ? (
+          <div className='text-center py-12'>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+            <p className='text-lg text-gray-500'>No features available</p>
+          </div>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {features.map((feature) => (
+              <div
+                key={feature.id}
+                className='group relative bg-white hover:bg-primary border border-gray-200 hover:border-primary-light rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 overflow-hidden'
+              >
+                {/* Content */}
+                <div className='relative z-10'>
+                  {/* Icon */}
+                  <div className='inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-primary to-primary-light hover:bg-white text-white rounded-xl mb-4 group-hover:scale-110 transition-all shadow-lg'>
+                    {feature.icon === 'custom' && feature.iconUrl ? (
+                      <img src={feature.iconUrl} alt={feature.title} className="w-8 h-8 object-contain" />
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getIconPath(feature.icon)} />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h3 className='text-xl font-bold text-[#000000] group-hover:text-[#FFFFFF] mb-3 transition-colors'>
+                    {feature.title}
+                  </h3>
+
+                  {/* Description */}
+                  <p className='text-[#333333] group-hover:text-[#EEEEEE] leading-relaxed transition-colors'>
+                    {feature.description}
+                  </p>
                 </div>
 
-                {/* Title */}
-                <h3 className='text-xl font-bold text-[#000000] group-hover:text-[#FFFFFF] mb-3 transition-colors'>
-                  {feature.title}
-                </h3>
-
-                {/* Description */}
-                <p className='text-[#333333] group-hover:text-[#EEEEEE] leading-relaxed transition-colors'>
-                  {feature.description}
-                </p>
+                {/* Decorative corner accent */}
+                <div className='absolute top-0 right-0 w-20 h-20 bg-linear-to-br from-accent/30 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none'></div>
               </div>
-
-              {/* Decorative corner accent */}
-              <div className='absolute top-0 right-0 w-20 h-20 bg-linear-to-br from-accent/30 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none'></div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   )
