@@ -119,7 +119,7 @@ export default function AdminSignInPage() {
                   onChange={handleChange}
                   required
                   className='w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors text-[#000000] placeholder:text-gray-400'
-                  placeholder='admin@carvo.com'
+                  placeholder='Enter your email address'
                 />
               </div>
             </div>
