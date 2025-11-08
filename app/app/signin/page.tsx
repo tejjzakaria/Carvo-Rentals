@@ -176,17 +176,17 @@ export default function AdminSignInPage() {
 
           {/* Demo Credentials */}
           <div className='mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl'>
-            <p className='text-xs text-gray-600 text-center mb-2 font-semibold'>Demo Credentials:</p>
+            <p className='text-xs text-gray-300 text-center mb-2 font-semibold'>Demo Credentials:</p>
             <div className='space-y-2'>
               <div>
-                <p className='text-xs text-gray-600 text-center font-semibold'>Admin:</p>
-                <p className='text-xs text-gray-600 text-center'>Email: <span className='font-mono font-semibold'>admin@carvo.com</span></p>
-                <p className='text-xs text-gray-600 text-center'>Password: <span className='font-mono font-semibold'>password123</span></p>
+                <p className='text-xs text-gray-300 text-center font-semibold'>Admin:</p>
+                <p className='text-xs text-gray-300 text-center'>Email: <span className='font-mono font-semibold'>admin@carvo.com</span></p>
+                <p className='text-xs text-gray-300 text-center'>Password: <span className='font-mono font-semibold'>password123</span></p>
               </div>
               <div className='border-t border-primary/10 pt-2'>
-                <p className='text-xs text-gray-600 text-center font-semibold'>Manager:</p>
-                <p className='text-xs text-gray-600 text-center'>Email: <span className='font-mono font-semibold'>manager@carvo.com</span></p>
-                <p className='text-xs text-gray-600 text-center'>Password: <span className='font-mono font-semibold'>password123</span></p>
+                <p className='text-xs text-gray-300 text-center font-semibold'>Manager:</p>
+                <p className='text-xs text-gray-300 text-center'>Email: <span className='font-mono font-semibold'>manager@carvo.com</span></p>
+                <p className='text-xs text-gray-300 text-center'>Password: <span className='font-mono font-semibold'>password123</span></p>
               </div>
             </div>
           </div>

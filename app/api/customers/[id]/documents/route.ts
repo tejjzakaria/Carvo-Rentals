@@ -28,7 +28,7 @@ export async function GET(
   }
 }
 
-// POST create document upload request
+// POST create document upload request or directly save uploaded document
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -36,7 +36,7 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { documentType, expiryDate } = body
+    const { documentType, expiryDate, fileUrl, fileName } = body
 
     // Validate document type
     const validTypes = ['drivers_license', 'id_card', 'proof_of_address']
@@ -75,6 +75,33 @@ export async function POST(
       )
     }
 
+    // If fileUrl is provided, create document with uploaded status
+    if (fileUrl) {
+      // Generate a dummy token (required field but not used for direct uploads)
+      const uploadToken = crypto.randomBytes(32).toString('hex')
+      const tokenExpiresAt = new Date()
+      tokenExpiresAt.setDate(tokenExpiresAt.getDate() + 7)
+
+      const document = await prisma.customerDocument.create({
+        data: {
+          customerId: id,
+          documentType,
+          documentUrl: fileUrl,
+          uploadToken,
+          tokenExpiresAt,
+          expiryDate: expiryDate ? new Date(expiryDate) : null,
+          status: 'uploaded',
+          uploadedAt: new Date()
+        }
+      })
+
+      return NextResponse.json({
+        success: true,
+        document
+      }, { status: 201 })
+    }
+
+    // Otherwise, generate upload token for customer to upload later
     // Generate secure upload token
     const uploadToken = crypto.randomBytes(32).toString('hex')
 

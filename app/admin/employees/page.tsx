@@ -66,13 +66,21 @@ export default function EmployeesPage() {
 
   const fetchCurrentUser = async () => {
     try {
+      console.log('🔍 [Employees Page] Fetching current user from /api/admin/profile')
       const response = await fetch('/api/admin/profile')
+      console.log('🔍 [Employees Page] Response status:', response.status)
+
       const data = await response.json()
+      console.log('🔍 [Employees Page] Response data:', JSON.stringify(data, null, 2))
+
       if (data.success) {
+        console.log('✅ [Employees Page] Current user ID set to:', data.data.id)
         setCurrentUserId(data.data.id)
+      } else {
+        console.error('❌ [Employees Page] API returned success: false', data)
       }
     } catch (error) {
-      console.error('Failed to fetch current user:', error)
+      console.error('❌ [Employees Page] Failed to fetch current user:', error)
     }
   }
 

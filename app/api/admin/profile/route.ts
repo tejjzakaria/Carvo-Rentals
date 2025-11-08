@@ -5,8 +5,15 @@ import { getCurrentUser } from '@/lib/auth'
 // GET admin profile
 export async function GET(request: NextRequest) {
   try {
+    // Debug: Log cookies
+    const authToken = request.cookies.get('auth-token')
+    console.log('Auth token present:', !!authToken)
+    console.log('All cookies:', request.cookies.getAll().map(c => c.name))
+
     // Get current logged-in user from JWT token
     const currentUser = await getCurrentUser(request)
+
+    console.log('Current user from token:', currentUser?.id, currentUser?.email)
 
     if (!currentUser) {
       return NextResponse.json(

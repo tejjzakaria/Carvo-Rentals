@@ -72,8 +72,11 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/' // Explicitly set path to ensure cookie is sent with all requests
     })
+
+    console.log('Cookie set for user:', user.id, 'Environment:', process.env.NODE_ENV)
 
     return response
   } catch (error) {
