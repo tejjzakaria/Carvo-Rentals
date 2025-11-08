@@ -56,9 +56,9 @@ const Header = () => {
 
     return (
         <Layout>
-            <div className='flex items-center justify-between h-16 text-black my-5'>
+            <div className='flex items-center justify-between h-16 text-black my-5 relative'>
                 {/* Logo */}
-                <div className='w-28 sm:w-36 flex-shrink-0 z-50'>
+                <div className='w-28 sm:w-36 flex-shrink-0'>
                     <a href="/">
                         {logo ? (
                             <img src={logo} alt={`${companyName} Logo`} className='max-h-12 sm:max-h-16 object-contain' />
@@ -89,7 +89,7 @@ const Header = () => {
                 </div>
 
                 {/* Desktop Phone */}
-                <div className='hidden md:flex items-center space-x-2 flex-shrink-0'>
+                <div className='hidden lg:flex items-center space-x-2 flex-shrink-0'>
                     <div className='bg-primary text-white p-2 rounded-md inline-flex items-center hover:bg-primary-dark cursor-pointer'>
                        <BsPhone size={20} className='inline-block' />
                     </div>
@@ -99,15 +99,10 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Mobile Phone Icon (Tablet) */}
-                <a href={`tel:${phone}`} className='md:hidden lg:hidden flex items-center justify-center bg-primary text-white p-2.5 rounded-md hover:bg-primary-dark cursor-pointer z-50 mr-2'>
-                    <BsPhone size={18} />
-                </a>
-
                 {/* Mobile Menu Button */}
                 <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className='lg:hidden z-50 text-black p-2 hover:bg-gray-100 rounded-lg transition-colors'
+                    className='lg:hidden text-black p-2 hover:bg-gray-100 rounded-lg transition-colors relative z-50'
                     aria-label='Toggle menu'
                 >
                     {mobileMenuOpen ? <HiX size={28} /> : <HiMenu size={28} />}
