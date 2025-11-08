@@ -147,24 +147,24 @@ const Hero = () => {
 
   return (
     <Layout>
-      <div className='relative flex flex-col items-center justify-center min-h-[600px] text-center bg-linear-to-br from-primary via-primary-dark to-primary-light text-white rounded-2xl p-8 overflow-hidden'>
+      <div className='relative flex flex-col items-center justify-center min-h-[600px] text-center bg-linear-to-br from-primary via-primary-dark to-primary-light text-white rounded-2xl p-8 md:overflow-hidden'>
         {/* Background decoration */}
-        <div className='absolute top-0 right-0 w-96 h-96 bg-secondary/20 rounded-full blur-3xl'></div>
-        <div className='absolute bottom-0 left-0 w-96 h-96 bg-accent/20 rounded-full blur-3xl'></div>
+        <div className='absolute top-0 right-0 w-96 h-96 bg-secondary/20 rounded-full blur-3xl -z-10'></div>
+        <div className='absolute bottom-0 left-0 w-96 h-96 bg-accent/20 rounded-full blur-3xl -z-10'></div>
 
         {/* Hero content */}
         <div className='relative z-10 mb-12'>
           <h1 className='text-5xl md:text-6xl font-bold mb-4'>Luxury, Comfort, and Class.</h1>
           <p className='text-lg md:text-xl mb-8 text-center mx-auto max-w-3xl'>
-            Enjoy total freedom on the road with effortless car rentals tailored to your needs. Whether you’re traveling for work, adventure, or everyday errands, we make getting behind the wheel simple, transparent, and stress-free.
+            Enjoy total freedom on the road with effortless car rentals tailored to your needs. Whether you're traveling for work, adventure, or everyday errands, we make getting behind the wheel simple, transparent, and stress-free.
           </p>
         </div>
 
         {/* Glassmorphism booking card */}
-        <form onSubmit={handleSearch} className='relative z-10 w-full max-w-5xl backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 shadow-2xl'>
+        <form onSubmit={handleSearch} className='relative z-20 w-full max-w-5xl backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 shadow-2xl overflow-visible'>
 
           {/* First Row - 3 inputs */}
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3 overflow-visible'>
             {/* Rental Location */}
             <div className='flex flex-col'>
               <label className='text-sm font-medium mb-2 text-left'>Rental Location</label>
@@ -196,12 +196,12 @@ const Hero = () => {
             </div>
 
             {/* Rental Date - With Calendar Icon */}
-            <div className='flex flex-col'>
+            <div className='flex flex-col relative z-30'>
               <label className='text-sm font-medium mb-2 text-left'>
                 Rental Date <span className='text-red-400'>*</span>
               </label>
               <div className='relative'>
-                <div className='absolute left-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none'>
+                <div className='absolute left-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none z-10'>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -212,21 +212,21 @@ const Hero = () => {
                   onChange={(e) => setRentalDate(e.target.value)}
                   min={today}
                   required
-                  className='w-full pl-10 pr-3 py-2.5 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-secondary transition-all [color-scheme:dark]'
+                  className='w-full pl-10 pr-3 py-2.5 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-secondary transition-all [color-scheme:dark] relative z-20'
                 />
               </div>
             </div>
           </div>
 
           {/* Second Row - 2 inputs + search button */}
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-visible'>
             {/* Return Date - With Calendar Icon */}
-            <div className='flex flex-col'>
+            <div className='flex flex-col relative z-30'>
               <label className='text-sm font-medium mb-2 text-left'>
                 Return Date <span className='text-red-400'>*</span>
               </label>
               <div className='relative'>
-                <div className='absolute left-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none'>
+                <div className='absolute left-3 top-1/2 -translate-y-1/2 text-white/70 pointer-events-none z-10'>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -237,7 +237,7 @@ const Hero = () => {
                   onChange={(e) => setReturnDate(e.target.value)}
                   min={rentalDate || today}
                   required
-                  className='w-full pl-10 pr-3 py-2.5 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-secondary transition-all [color-scheme:dark]'
+                  className='w-full pl-10 pr-3 py-2.5 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-secondary transition-all [color-scheme:dark] relative z-20'
                 />
               </div>
             </div>
