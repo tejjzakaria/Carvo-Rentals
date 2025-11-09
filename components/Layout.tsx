@@ -1,3 +1,9 @@
+/**
+ * @author Zakaria TEJJANI
+ * @email zakaria.tejjani@gmail.com
+ * @date 2025-11-09
+ */
+
 import React from 'react'
 
 interface LayoutProps {

@@ -1,3 +1,9 @@
+/**
+ * @author Zakaria TEJJANI
+ * @email zakaria.tejjani@gmail.com
+ * @date 2025-11-09
+ */
+
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'

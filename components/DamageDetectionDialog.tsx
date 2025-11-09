@@ -1,3 +1,9 @@
+/**
+ * @author Zakaria TEJJANI
+ * @email zakaria.tejjani@gmail.com
+ * @date 2025-11-09
+ */
+
 'use client'
 import { useState } from 'react'
 import { HiX, HiExclamationCircle, HiCheckCircle } from 'react-icons/hi'

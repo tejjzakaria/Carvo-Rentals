@@ -1,3 +1,9 @@
+/**
+ * @author Zakaria TEJJANI
+ * @email zakaria.tejjani@gmail.com
+ * @date 2025-11-09
+ */
+
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'

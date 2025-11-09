@@ -1,3 +1,9 @@
+/**
+ * @author Zakaria TEJJANI
+ * @email zakaria.tejjani@gmail.com
+ * @date 2025-11-09
+ */
+
 'use client'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'

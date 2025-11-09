@@ -1,3 +1,9 @@
+/**
+ * @author Zakaria TEJJANI
+ * @email zakaria.tejjani@gmail.com
+ * @date 2025-11-09
+ */
+
 'use client'
 import { useState, useEffect } from 'react'
 import Toast from '@/components/Toast'
