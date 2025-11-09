@@ -1,30 +1,31 @@
+/**
+ * @author Zakaria TEJJANI
+ * @email zakaria.tejjani@gmail.com
+ * @date 2025-11-09
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { auth } from '@/auth'
 
 // GET admin profile
 export async function GET(request: NextRequest) {
   try {
-    // Debug: Log cookies
-    const authToken = request.cookies.get('auth-token')
-    console.log('Auth token present:', !!authToken)
-    console.log('All cookies:', request.cookies.getAll().map(c => c.name))
+    // Get current logged-in user from NextAuth session
+    const session = await auth()
 
-    // Get current logged-in user from JWT token
-    const currentUser = await getCurrentUser(request)
+    console.log('Current user from session:', session?.user?.id, session?.user?.email)
 
-    console.log('Current user from token:', currentUser?.id, currentUser?.email)
-
-    if (!currentUser) {
+    if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
     // Fetch full user details from database
     const admin = await prisma.user.findUnique({
-      where: { id: currentUser.id },
+      where: { id: session.user.id },
       select: {
         id: true,
         name: true,
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     if (!admin) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { success: false, error: 'User not found' },
         { status: 404 }
       )
     }
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get admin profile error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch admin profile' },
+      { success: false, error: 'Failed to fetch admin profile' },
       { status: 500 }
     )
   }
@@ -58,12 +59,12 @@ export async function GET(request: NextRequest) {
 // PUT - Update admin profile
 export async function PUT(request: NextRequest) {
   try {
-    // Get current logged-in user from JWT token
-    const currentUser = await getCurrentUser(request)
+    // Get current logged-in user from NextAuth session
+    const session = await auth()
 
-    if (!currentUser) {
+    if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       )
     }
@@ -74,20 +75,20 @@ export async function PUT(request: NextRequest) {
     // Validate required fields
     if (!name || !email) {
       return NextResponse.json(
-        { error: 'Name and email are required' },
+        { success: false, error: 'Name and email are required' },
         { status: 400 }
       )
     }
 
     // Check if email is already taken by another user
-    if (email !== currentUser.email) {
+    if (email !== session.user.email) {
       const emailExists = await prisma.user.findUnique({
         where: { email }
       })
 
-      if (emailExists && emailExists.id !== currentUser.id) {
+      if (emailExists && emailExists.id !== session.user.id) {
         return NextResponse.json(
-          { error: 'Email is already in use' },
+          { success: false, error: 'Email is already in use' },
           { status: 400 }
         )
       }
@@ -95,7 +96,7 @@ export async function PUT(request: NextRequest) {
 
     // Update user profile
     const updatedUser = await prisma.user.update({
-      where: { id: currentUser.id },
+      where: { id: session.user.id },
       data: {
         name,
         email,
@@ -120,7 +121,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Update admin profile error:', error)
     return NextResponse.json(
-      { error: 'Failed to update admin profile' },
+      { success: false, error: 'Failed to update admin profile' },
       { status: 500 }
     )
   }
