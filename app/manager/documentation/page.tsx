@@ -317,6 +317,88 @@ export default function ManagerDocumentationPage() {
                     <li>• Proof of address</li>
                   </ul>
                 </div>
+
+                {/* AI Driver License Auto-Fill */}
+                <div className='bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 mt-6'>
+                  <h3 className='text-xl font-bold text-[#000000] mb-3 flex items-center gap-2'>
+                    <span className='text-2xl'>🤖</span>
+                    AI Driver License Auto-Fill
+                  </h3>
+                  <p className='text-gray-300 mb-4'>
+                    Save time by automatically extracting customer information from driver license photos using AI.
+                  </p>
+
+                  <div className='bg-white rounded-xl p-5 mb-4'>
+                    <h4 className='font-bold text-[#000000] mb-3'>How to Use</h4>
+                    <ol className='space-y-3 text-gray-300'>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>1</span>
+                        <div>
+                          <strong className='text-[#000000]'>Create Customer:</strong> Go to customers page and click "New Customer"
+                        </div>
+                      </li>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>2</span>
+                        <div>
+                          <strong className='text-[#000000]'>Upload License:</strong> Click "📷 Auto-Fill from Driver License" button
+                        </div>
+                      </li>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>3</span>
+                        <div>
+                          <strong className='text-[#000000]'>AI Processing:</strong> AI extracts name, address, license number, dates, etc.
+                        </div>
+                      </li>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>4</span>
+                        <div>
+                          <strong className='text-[#000000]'>Verify & Save:</strong> Review auto-filled data and save customer
+                        </div>
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className='bg-white rounded-xl p-5'>
+                    <h4 className='font-bold text-[#000000] mb-3'>What Gets Extracted</h4>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-2 text-sm'>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-blue-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Full name</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-blue-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Date of birth</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-blue-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>License number</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-blue-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Expiry date</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-blue-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Full address</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-blue-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>License class</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-green-50 border border-green-200 rounded-lg p-4 mt-4'>
+                    <h4 className='font-bold text-green-800 mb-2'>💡 Benefits</h4>
+                    <ul className='text-sm text-green-700 space-y-1 ml-4'>
+                      <li>• Extracts information in seconds - no manual typing needed</li>
+                      <li>• Reduces data entry errors and typos</li>
+                      <li>• Speeds up customer check-in process</li>
+                      <li>• Works with various license formats</li>
+                      <li>• Always verify extracted data before saving</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -389,6 +471,94 @@ export default function ManagerDocumentationPage() {
                       <span className='font-bold text-green-800'>Repaired:</span>
                       <p className='text-sm text-green-700'>Fixed, vehicle can return to normal status</p>
                     </div>
+                  </div>
+                </div>
+
+                {/* AI Damage Detection */}
+                <div className='bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mt-6'>
+                  <h3 className='text-xl font-bold text-[#000000] mb-3 flex items-center gap-2'>
+                    <span className='text-2xl'>🤖</span>
+                    AI-Powered Damage Detection
+                  </h3>
+                  <p className='text-gray-300 mb-4'>
+                    Automatically detect vehicle damage using advanced AI vision technology. The system compares check-in and check-out photos to identify new damage.
+                  </p>
+
+                  <div className='bg-white rounded-xl p-5 mb-4'>
+                    <h4 className='font-bold text-[#000000] mb-3'>How to Use</h4>
+                    <ol className='space-y-3 text-gray-300'>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>1</span>
+                        <div>
+                          <strong className='text-[#000000]'>Upload Check-In Photos:</strong> When activating a rental, upload 4 photos (front, back, left, right)
+                        </div>
+                      </li>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>2</span>
+                        <div>
+                          <strong className='text-[#000000]'>Upload Check-Out Photos:</strong> When completing rental, upload 4 photos from same angles
+                        </div>
+                      </li>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>3</span>
+                        <div>
+                          <strong className='text-[#000000]'>Run Detection:</strong> Click "AI Damage Detection" button in rental view page
+                        </div>
+                      </li>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>4</span>
+                        <div>
+                          <strong className='text-[#000000]'>Review Results:</strong> AI shows detected damages with severity, location, and cost estimates
+                        </div>
+                      </li>
+                      <li className='flex gap-3'>
+                        <span className='flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>5</span>
+                        <div>
+                          <strong className='text-[#000000]'>Create Reports:</strong> Click "Create Damage Reports" to auto-generate reports for all damages
+                        </div>
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className='bg-white rounded-xl p-5'>
+                    <h4 className='font-bold text-[#000000] mb-3'>What AI Detects</h4>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3 text-sm'>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-purple-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Scratches and paint damage</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-purple-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Dents and body damage</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-purple-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Broken lights or mirrors</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-purple-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Cracked windshields</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-purple-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Bumper damage</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='text-purple-600 mt-1'>✓</span>
+                        <span className='text-gray-300'>Tire damage</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-green-50 border border-green-200 rounded-lg p-4 mt-4'>
+                    <h4 className='font-bold text-green-800 mb-2'>💡 Benefits</h4>
+                    <ul className='text-sm text-green-700 space-y-1 ml-4'>
+                      <li>• Saves time: AI detection takes 5-10 seconds vs 10-15 minutes manual inspection</li>
+                      <li>• Reduces customer disputes with objective AI analysis</li>
+                      <li>• Provides detailed documentation for insurance claims</li>
+                      <li>• Consistent quality for every rental inspection</li>
+                      <li>• Very cost effective: ~$0.005 per detection</li>
+                    </ul>
                   </div>
                 </div>
               </div>

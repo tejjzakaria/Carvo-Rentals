@@ -412,3 +412,25 @@ model Contact {
 
   @@map("contacts")
 }
+
+// Support Tickets
+model Ticket {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  ticketId    String   @unique // TKT-001, TKT-002, etc.
+  title       String
+  description String
+  category    String // bug, feature_request, improvement, question, other
+  priority    String   @default("medium") // low, medium, high, critical
+  status      String   @default("open") // open, in_progress, resolved, closed
+  assignedTo  String? // User/employee name or ID
+  reportedBy  String // Name of person who reported
+  reportedByEmail String? // Email of reporter
+  attachments String[] @default([]) // Array of file URLs
+  resolution  String? // Resolution notes when closed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime? // When ticket was resolved
+  closedAt    DateTime? // When ticket was closed
+
+  @@map("tickets")
+}

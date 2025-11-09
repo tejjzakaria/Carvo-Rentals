@@ -635,7 +635,7 @@ export default function RentalsPage({ basePath, HeaderComponent }: SharedPagePro
                             <select
                               value={rental.status}
                               onChange={(e) => handleStatusChange(rental.id, e.target.value)}
-                              className={`appearance-none pl-3 pr-8 py-1 text-xs font-semibold rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-all ${getStatusColor(rental.status)}`}
+                              className={`appearance-none pl-3 pr-8 py-1 text-xs font-semibold rounded-md border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-all ${getStatusColor(rental.status)}`}
                               style={{ minWidth: '110px' }}
                             >
                               <option value="pending">pending</option>
@@ -655,7 +655,7 @@ export default function RentalsPage({ basePath, HeaderComponent }: SharedPagePro
                             <select
                               value={rental.paymentStatus}
                               onChange={(e) => handlePaymentStatusChange(rental.id, e.target.value)}
-                              className={`appearance-none pl-3 pr-8 py-1 text-xs font-semibold rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-all ${getPaymentStatusColor(rental.paymentStatus)}`}
+                              className={`appearance-none pl-3 pr-8 py-1 text-xs font-semibold rounded-md border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-all ${getPaymentStatusColor(rental.paymentStatus)}`}
                               style={{ minWidth: '100px' }}
                             >
                               <option value="pending">pending</option>

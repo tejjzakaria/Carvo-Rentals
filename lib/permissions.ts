@@ -33,6 +33,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Record<string, Permission>> = {
     aboutContent: { page: 'About Content', canView: true, canCreate: true, canEdit: true, canDelete: true },
     contacts: { page: 'Contacts', canView: true, canCreate: true, canEdit: true, canDelete: true },
     reports: { page: 'Reports', canView: true, canCreate: true, canEdit: true, canDelete: true },
+    tickets: { page: 'Tickets', canView: true, canCreate: true, canEdit: true, canDelete: true },
     backup: { page: 'Backup', canView: true, canCreate: true, canEdit: true, canDelete: true },
     documentation: { page: 'Documentation', canView: true, canCreate: true, canEdit: true, canDelete: true },
     settings: { page: 'Settings', canView: true, canCreate: true, canEdit: true, canDelete: true },
@@ -47,6 +48,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Record<string, Permission>> = {
     customers: { page: 'Customers', canView: true, canCreate: true, canEdit: true, canDelete: true },
     damages: { page: 'Damages', canView: true, canCreate: true, canEdit: true, canDelete: true },
     maintenance: { page: 'Maintenance', canView: true, canCreate: true, canEdit: true, canDelete: true },
+    tickets: { page: 'Tickets', canView: true, canCreate: true, canEdit: false, canDelete: false },
     documentation: { page: 'Documentation', canView: true, canCreate: false, canEdit: false, canDelete: false },
     // Manager does NOT have access to these
     employees: { page: 'Employees', canView: false, canCreate: false, canEdit: false, canDelete: false },
