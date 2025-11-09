@@ -8,7 +8,7 @@ export default function ManagerNotFound() {
 
   return (
     <div className='min-h-screen bg-gray-50'>
-      <ManagerHeader />
+      <ManagerHeader title="Page Not Found" subtitle="Error 404" />
 
       <div className='flex items-center justify-center py-20 px-4'>
         <div className='w-full max-w-2xl'>
