@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import Toast from '@/components/Toast'
 import RentalExtensionDialog from '@/components/RentalExtensionDialog'
+import RentalPhotoUploadDialog from '@/components/RentalPhotoUploadDialog'
 import { useSettings } from '@/contexts/SettingsContext'
 
 interface Rental {
@@ -71,6 +72,17 @@ export default function RentalsPage({ basePath, HeaderComponent }: SharedPagePro
   const [extensionDialog, setExtensionDialog] = useState<{ isOpen: boolean; rental: Rental | null }>({
     isOpen: false,
     rental: null
+  })
+  const [photoUploadDialog, setPhotoUploadDialog] = useState<{
+    isOpen: boolean
+    rentalId: string | null
+    type: 'checkIn' | 'checkOut' | null
+    newStatus: string | null
+  }>({
+    isOpen: false,
+    rentalId: null,
+    type: null,
+    newStatus: null
   })
   const [toast, setToast] = useState<ToastState>({
     show: false,
@@ -165,6 +177,157 @@ export default function RentalsPage({ basePath, HeaderComponent }: SharedPagePro
       type: 'success'
     })
     fetchRentals()
+  }
+
+  const handleStatusChange = async (rentalId: string, newStatus: string) => {
+    // If changing to 'active', prompt for check-in photos
+    if (newStatus === 'active') {
+      setPhotoUploadDialog({
+        isOpen: true,
+        rentalId,
+        type: 'checkIn',
+        newStatus
+      })
+      return
+    }
+
+    // If changing to 'completed', prompt for check-out photos
+    if (newStatus === 'completed') {
+      setPhotoUploadDialog({
+        isOpen: true,
+        rentalId,
+        type: 'checkOut',
+        newStatus
+      })
+      return
+    }
+
+    // For other status changes, proceed normally
+    try {
+      const response = await fetch(`/api/rentals/${rentalId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setToast({
+          show: true,
+          message: `Rental status updated to ${newStatus}`,
+          type: 'success'
+        })
+        fetchRentals()
+      } else {
+        setToast({
+          show: true,
+          message: data.error || 'Failed to update rental status',
+          type: 'error'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to update rental status:', error)
+      setToast({
+        show: true,
+        message: 'An error occurred while updating the rental status',
+        type: 'error'
+      })
+    }
+  }
+
+  const handlePhotoUpload = async (photos: File[]) => {
+    if (!photoUploadDialog.rentalId || !photoUploadDialog.type || !photoUploadDialog.newStatus) {
+      return
+    }
+
+    try {
+      // Upload photos
+      const formData = new FormData()
+      formData.append('type', photoUploadDialog.type)
+      photos.forEach((photo, index) => {
+        formData.append(`photo${index}`, photo)
+      })
+
+      const uploadResponse = await fetch(`/api/rentals/${photoUploadDialog.rentalId}/photos`, {
+        method: 'POST',
+        body: formData
+      })
+
+      const uploadData = await uploadResponse.json()
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || 'Failed to upload photos')
+      }
+
+      // Update status after successful photo upload
+      const statusResponse = await fetch(`/api/rentals/${photoUploadDialog.rentalId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: photoUploadDialog.newStatus })
+      })
+
+      const statusData = await statusResponse.json()
+
+      if (statusResponse.ok) {
+        setToast({
+          show: true,
+          message: `Photos uploaded and rental status updated to ${photoUploadDialog.newStatus}`,
+          type: 'success'
+        })
+        fetchRentals()
+        setPhotoUploadDialog({
+          isOpen: false,
+          rentalId: null,
+          type: null,
+          newStatus: null
+        })
+      } else {
+        throw new Error(statusData.error || 'Failed to update status')
+      }
+    } catch (error: any) {
+      console.error('Failed to upload photos:', error)
+      setToast({
+        show: true,
+        message: error.message || 'An error occurred while uploading photos',
+        type: 'error'
+      })
+      throw error
+    }
+  }
+
+  const handlePaymentStatusChange = async (rentalId: string, newPaymentStatus: string) => {
+    try {
+      const response = await fetch(`/api/rentals/${rentalId}/payment-status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: newPaymentStatus })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setToast({
+          show: true,
+          message: `Payment status updated to ${newPaymentStatus}`,
+          type: 'success'
+        })
+        fetchRentals()
+      } else {
+        setToast({
+          show: true,
+          message: data.error || 'Failed to update payment status',
+          type: 'error'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to update payment status:', error)
+      setToast({
+        show: true,
+        message: 'An error occurred while updating the payment status',
+        type: 'error'
+      })
+    }
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -468,14 +631,43 @@ export default function RentalsPage({ basePath, HeaderComponent }: SharedPagePro
                         <td className='px-6 py-4 text-sm text-gray-300'>{formatDate(rental.startDate)}</td>
                         <td className='px-6 py-4 text-sm text-gray-300'>{formatDate(rental.endDate)}</td>
                         <td className='px-6 py-4'>
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full border ${getStatusColor(rental.status)}`}>
-                            {rental.status}
-                          </span>
+                          <div className='relative inline-block'>
+                            <select
+                              value={rental.status}
+                              onChange={(e) => handleStatusChange(rental.id, e.target.value)}
+                              className={`appearance-none pl-3 pr-8 py-1 text-xs font-semibold rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-all ${getStatusColor(rental.status)}`}
+                              style={{ minWidth: '110px' }}
+                            >
+                              <option value="pending">pending</option>
+                              <option value="active">active</option>
+                              <option value="completed">completed</option>
+                              <option value="cancelled">cancelled</option>
+                            </select>
+                            <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2'>
+                              <svg className='h-3 w-3' fill='currentColor' viewBox='0 0 20 20'>
+                                <path fillRule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clipRule='evenodd' />
+                              </svg>
+                            </div>
+                          </div>
                         </td>
                         <td className='px-6 py-4'>
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full border ${getPaymentStatusColor(rental.paymentStatus)}`}>
-                            {rental.paymentStatus}
-                          </span>
+                          <div className='relative inline-block'>
+                            <select
+                              value={rental.paymentStatus}
+                              onChange={(e) => handlePaymentStatusChange(rental.id, e.target.value)}
+                              className={`appearance-none pl-3 pr-8 py-1 text-xs font-semibold rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary transition-all ${getPaymentStatusColor(rental.paymentStatus)}`}
+                              style={{ minWidth: '100px' }}
+                            >
+                              <option value="pending">pending</option>
+                              <option value="paid">paid</option>
+                              <option value="refunded">refunded</option>
+                            </select>
+                            <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2'>
+                              <svg className='h-3 w-3' fill='currentColor' viewBox='0 0 20 20'>
+                                <path fillRule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clipRule='evenodd' />
+                              </svg>
+                            </div>
+                          </div>
                         </td>
                         <td className='px-6 py-4 text-sm font-bold text-[#000000]'>{formatCurrency(rental.totalAmount)}</td>
                         <td className='px-6 py-4'>
@@ -630,6 +822,24 @@ export default function RentalsPage({ basePath, HeaderComponent }: SharedPagePro
         rental={extensionDialog.rental}
         onSuccess={handleExtensionSuccess}
       />
+
+      {/* Photo Upload Dialog */}
+      {photoUploadDialog.rentalId && photoUploadDialog.type && (
+        <RentalPhotoUploadDialog
+          isOpen={photoUploadDialog.isOpen}
+          onClose={() =>
+            setPhotoUploadDialog({
+              isOpen: false,
+              rentalId: null,
+              type: null,
+              newStatus: null
+            })
+          }
+          onSubmit={handlePhotoUpload}
+          type={photoUploadDialog.type}
+          rentalId={photoUploadDialog.rentalId}
+        />
+      )}
 
       {/* Toast Notifications */}
       {toast.show && (

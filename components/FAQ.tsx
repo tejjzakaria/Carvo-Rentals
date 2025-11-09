@@ -210,7 +210,7 @@ export default function FAQ() {
                   </button>
                   {openFaqId === faq.id && (
                     <div className='px-8 pb-6 pt-2 border-t border-gray-100'>
-                      <p className='text-gray-600 leading-relaxed whitespace-pre-line'>
+                      <p className='text-gray-300 leading-relaxed whitespace-pre-line'>
                         {faq.answer}
                       </p>
                     </div>

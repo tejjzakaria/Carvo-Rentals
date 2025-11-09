@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Toast from '@/components/Toast'
+import DamageDetectionDialog from '@/components/DamageDetectionDialog'
 import { useSettings } from '@/contexts/SettingsContext'
 
 interface Rental {
@@ -17,6 +18,10 @@ interface Rental {
   totalAmount: number
   paymentStatus: string
   notes?: string
+  checkInPhotos?: string[]
+  checkInDate?: string
+  checkOutPhotos?: string[]
+  checkOutDate?: string
   customer: {
     id: string
     name: string
@@ -54,6 +59,7 @@ export default function ViewRentalPage({ basePath, HeaderComponent }: SharedPage
 
   const [rental, setRental] = useState<Rental | null>(null)
   const [loading, setLoading] = useState(true)
+  const [damageDetectionDialog, setDamageDetectionDialog] = useState(false)
   const [toast, setToast] = useState<ToastState>({
     show: false,
     message: '',
@@ -247,7 +253,7 @@ export default function ViewRentalPage({ basePath, HeaderComponent }: SharedPage
 
                   <div>
                     <p className='text-sm text-gray-500 mb-1'>Daily Rate</p>
-                    <p className='font-semibold text-primary text-lg'>${rental.vehicle.price}</p>
+                    <p className='font-semibold text-primary text-lg'>{formatCurrency(rental.vehicle.price)}</p>
                   </div>
                 </div>
               </div>
@@ -302,7 +308,7 @@ export default function ViewRentalPage({ basePath, HeaderComponent }: SharedPage
                       )}
                       <p className={`font-semibold ${rental.withDriver ? 'text-green-800' : 'text-gray-500'}`}>With Driver</p>
                     </div>
-                    {rental.withDriver && <p className='text-sm text-green-700'>+${50 * days} (${50}/day)</p>}
+                    {rental.withDriver && <p className='text-sm text-green-700'>+{formatCurrency(50 * days)} ({formatCurrency(50)}/day)</p>}
                   </div>
 
                   <div className={`flex-1 p-4 rounded-xl border-2 ${rental.insurance ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
@@ -318,10 +324,117 @@ export default function ViewRentalPage({ basePath, HeaderComponent }: SharedPage
                       )}
                       <p className={`font-semibold ${rental.insurance ? 'text-green-800' : 'text-gray-500'}`}>Insurance Coverage</p>
                     </div>
-                    {rental.insurance && <p className='text-sm text-green-700'>+${20 * days} (${20}/day)</p>}
+                    {rental.insurance && <p className='text-sm text-green-700'>+{formatCurrency(20 * days)} ({formatCurrency(20)}/day)</p>}
                   </div>
                 </div>
               </div>
+
+              {/* Vehicle Photos */}
+              {(rental.checkInPhotos && rental.checkInPhotos.length > 0) || (rental.checkOutPhotos && rental.checkOutPhotos.length > 0) ? (
+                <div className='bg-white rounded-2xl shadow-sm border border-gray-200 p-6'>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h2 className='text-xl font-bold text-[#000000] flex items-center gap-2'>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Vehicle Photos
+                    </h2>
+                    {rental.checkInPhotos && rental.checkInPhotos.length > 0 && rental.checkOutPhotos && rental.checkOutPhotos.length > 0 && (
+                      <button
+                        onClick={() => setDamageDetectionDialog(true)}
+                        className='px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 shadow-lg flex items-center gap-2'
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        AI Damage Detection
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Check-In Photos */}
+                  {rental.checkInPhotos && rental.checkInPhotos.length > 0 && (
+                    <div className='mb-6'>
+                      <div className='flex items-center justify-between mb-4'>
+                        <h3 className='text-lg font-semibold text-[#000000]'>Check-In Photos</h3>
+                        {rental.checkInDate && (
+                          <span className='text-sm text-gray-500'>
+                            {formatDate(rental.checkInDate)}
+                          </span>
+                        )}
+                      </div>
+                      <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                        {rental.checkInPhotos.map((photo, index) => {
+                          const labels = ['Front View', 'Back View', 'Left Side', 'Right Side']
+                          return (
+                            <div key={index} className='group'>
+                              <a
+                                href={photo}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='block relative aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-primary transition-all duration-300'
+                              >
+                                <img
+                                  src={photo}
+                                  alt={labels[index]}
+                                  className='w-full h-full object-cover'
+                                />
+                                <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4'>
+                                  <span className='bg-white text-primary px-4 py-2 rounded-lg font-semibold text-sm shadow-lg'>
+                                    View Full Size
+                                  </span>
+                                </div>
+                              </a>
+                              <p className='text-xs text-gray-500 mt-2 text-center font-medium'>{labels[index]}</p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Check-Out Photos */}
+                  {rental.checkOutPhotos && rental.checkOutPhotos.length > 0 && (
+                    <div>
+                      <div className='flex items-center justify-between mb-4'>
+                        <h3 className='text-lg font-semibold text-[#000000]'>Check-Out Photos</h3>
+                        {rental.checkOutDate && (
+                          <span className='text-sm text-gray-500'>
+                            {formatDate(rental.checkOutDate)}
+                          </span>
+                        )}
+                      </div>
+                      <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                        {rental.checkOutPhotos.map((photo, index) => {
+                          const labels = ['Front View', 'Back View', 'Left Side', 'Right Side']
+                          return (
+                            <div key={index} className='group'>
+                              <a
+                                href={photo}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='block relative aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-primary transition-all duration-300'
+                              >
+                                <img
+                                  src={photo}
+                                  alt={labels[index]}
+                                  className='w-full h-full object-cover'
+                                />
+                                <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4'>
+                                  <span className='bg-white text-primary px-4 py-2 rounded-lg font-semibold text-sm shadow-lg'>
+                                    View Full Size
+                                  </span>
+                                </div>
+                              </a>
+                              <p className='text-xs text-gray-500 mt-2 text-center font-medium'>{labels[index]}</p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             {/* Sidebar */}
@@ -397,6 +510,19 @@ export default function ViewRentalPage({ basePath, HeaderComponent }: SharedPage
             </div>
           </div>
         </main>
+
+      {/* Damage Detection Dialog */}
+      {rental && (
+        <DamageDetectionDialog
+          isOpen={damageDetectionDialog}
+          onClose={() => setDamageDetectionDialog(false)}
+          rentalId={rental.id}
+          vehicleId={rental.vehicleId}
+          customerId={rental.customerId}
+          basePath={basePath}
+        />
+      )}
+
       {/* Toast Notifications */}
       {toast.show && (
         <Toast

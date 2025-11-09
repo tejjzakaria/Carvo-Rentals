@@ -96,20 +96,24 @@ model Vehicle {
 
 // Rentals
 model Rental {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  rentalId      String   @unique // RNT-001, RNT-002, etc.
-  customerId    String   @db.ObjectId
-  vehicleId     String   @db.ObjectId
-  startDate     DateTime
-  endDate       DateTime
-  status        String   @default("pending") // pending, active, completed, cancelled
-  withDriver    Boolean  @default(false)
-  insurance     Boolean  @default(false)
-  totalAmount   Float
-  paymentStatus String   @default("pending") // pending, paid, refunded
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  rentalId         String    @unique // RNT-001, RNT-002, etc.
+  customerId       String    @db.ObjectId
+  vehicleId        String    @db.ObjectId
+  startDate        DateTime
+  endDate          DateTime
+  status           String    @default("pending") // pending, active, completed, cancelled
+  withDriver       Boolean   @default(false)
+  insurance        Boolean   @default(false)
+  totalAmount      Float
+  paymentStatus    String    @default("pending") // pending, paid, refunded
+  notes            String?
+  checkInPhotos    String[]  @default([]) // Array of check-in photo URLs (front, back, left, right)
+  checkInDate      DateTime?
+  checkOutPhotos   String[]  @default([]) // Array of check-out photo URLs (front, back, left, right)
+  checkOutDate     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id])
   vehicle  Vehicle  @relation(fields: [vehicleId], references: [id])
